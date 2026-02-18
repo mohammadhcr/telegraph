@@ -1,10 +1,15 @@
-import styles from "../styles/Loading.module.scss";
+import { Spinner } from "@/components/ui/spinner";
 
 const Loading = () => {
   return (
-    <div className="userWrapper">
-      <span className={styles.loader}></span>
-      <span className={styles.loaderText}>لودینگ...</span>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div
+        className="flex flex-col
+       items-center gap-2 rounded-lg border bg-card px-4 py-3 shadow-sm"
+      >
+        <Spinner className="size-8" />
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
     </div>
   );
 };

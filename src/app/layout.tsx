@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ClerkProvider, ClerkLoading } from "@clerk/nextjs";
 import Loading from "./loading";
+import { PWARegister } from "@/components/pwa-register";
 
-const myFont = localFont({
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const vazirmatn = localFont({
   src: [
     {
       path: "../../public/Vazirmatn-Light.ttf",
@@ -42,6 +49,7 @@ const myFont = localFont({
       style: "normal",
     },
   ],
+  variable: "--font-vazir",
 });
 
 export const metadata: Metadata = {
@@ -56,11 +64,12 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="fa">
+      <html lang="fa" className="dark">
         <head>
           <link rel="manifest" href="/manifest.json" />
         </head>
-        <body className={`${myFont.className}`}>
+        <body className={`${inter.variable} ${vazirmatn.variable} min-h-screen`}>
+          <PWARegister />
           <ClerkLoading>
             <Loading />
           </ClerkLoading>

@@ -1,14 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import styles from "../../styles/Signup.module.scss";
-import { MdOutlineAlternateEmail } from "react-icons/md";
-import Image from "next/image";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import Loading from "@/app/loading";
-import { FaEye, FaLock } from "react-icons/fa";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 const ForgotPassword = () => {
   const { isLoaded, signIn, setActive } = useSignIn();
@@ -80,104 +88,105 @@ const ForgotPassword = () => {
     }
   };
 
-  const {
-    sForm,
-    signup,
-    title,
-    inputs,
-    submitB,
-    bxlp,
-    bxlpActive,
-    verifyCode,
-    bxl,
-    btnLoader,
-    errMsgCode,
-    input,
-    placeholder,
-  } = styles;
-
   return (
     <Suspense fallback={<Loading />}>
-      <form className={sForm}>
-        {!pendingVerification ? (
-          <div className={signup}>
-            <div className={title}>
-              <h1>فراموشی رمز عبور</h1>
-              <p>برای ارسال کد «تغییر رمز»، ایمیل‌تون رو وارد کنین...</p>
-            </div>
-            <div className={inputs}>
-              <div className={input}>
-                <span className={placeholder}></span>
-                <div>
-                  <MdOutlineAlternateEmail className={bxl} />
-                  <input
-                    type="email"
-                    name="email"
-                    value={emailAddress}
-                    onChange={(e) => setEmailAddress(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-            <span className={errMsgCode}>{error && error}</span>
-            <div className={submitB}>
-              <button onClick={ResetAction} type="submit">
-                {btnLoad ? <span className={btnLoader}></span> : "ارسال کد"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className={signup}>
-            <div className={title}>
-              <h1>تغییر رمز عبور</h1>
-              <p>
-                کد تائیدی که برات ایمیل کردیم و رمز جدیدت رو اینجا وارد کن...
-              </p>
-            </div>
-            <div className={inputs}>
-              <div className={input}>
-                <span className={placeholder}>رمز عبور جدید:</span>
-                <div>
-                  <FaLock className={bxl} />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    name="password"
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <FaEye
-                    className={`${bxlp} ${showPassword ? `${bxlpActive}` : ""}`}
-                    onClick={() => setshowPassword(!showPassword)}
-                  />
-                </div>
-              </div>
-              <div className={input}>
-                <span className={placeholder}>کد تائید:</span>
-                <div>
-                  <FaLock className={bxl} />
-                  <input
-                    className={verifyCode}
-                    type="text"
-                    name="verify"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-            <span className={errMsgCode}>{error && error}</span>
-            <div className={submitB}>
-              <button onClick={DoneAction} type="submit">
-                {btnLoad ? (
-                  "تائید اطلاعات"
-                ) : (
-                  <span className={btnLoader}></span>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-      </form>
+      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
+        <Card className="w-full max-w-md">
+          {!pendingVerification ? (
+            <>
+              <CardHeader className="space-y-1 px-5 py-4 text-center">
+                <CardTitle className="text-2xl">Forgot password</CardTitle>
+                <CardDescription>
+                  Enter your email and we will send a verification code.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 pt-0">
+                <form onSubmit={ResetAction} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      name="email"
+                      value={emailAddress}
+                      onChange={(e) => setEmailAddress(e.target.value)}
+                      placeholder="example@email.com"
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {error}
+                    </p>
+                  )}
+
+                  <Button type="submit" className="w-full" disabled={btnLoad}>
+                    {btnLoad ? <Spinner className="size-4" /> : "Send code"}
+                  </Button>
+                </form>
+              </CardContent>
+            </>
+          ) : (
+            <>
+              <CardHeader className="space-y-1 px-5 py-4 text-center">
+                <CardTitle className="text-2xl">Reset password</CardTitle>
+                <CardDescription>
+                  Enter the code and your new password to continue.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 pt-0">
+                <form onSubmit={DoneAction} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="password">New password</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        name="password"
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="********"
+                        className="pl-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1/2 left-1 h-7 w-7 -translate-y-1/2"
+                        onClick={() => setshowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="code">Verification code</Label>
+                    <Input
+                      id="code"
+                      type="text"
+                      name="verify"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      placeholder="123456"
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {error}
+                    </p>
+                  )}
+
+                  <Button type="submit" className="w-full">
+                    {btnLoad ? <Spinner className="size-4" /> : "Confirm reset"}
+                  </Button>
+                </form>
+              </CardContent>
+            </>
+          )}
+        </Card>
+      </main>
     </Suspense>
   );
 };

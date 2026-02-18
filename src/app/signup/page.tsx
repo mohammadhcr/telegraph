@@ -2,16 +2,22 @@
 "use client";
 
 import Link from "next/link";
-import styles from "../../styles/Signup.module.scss";
-import { SiGithub } from "react-icons/si";
-import { FcGoogle } from "react-icons/fc";
-import { FaEye, FaLock } from "react-icons/fa";
-import { FaUser } from "react-icons/fa";
-import { MdOutlineAlternateEmail } from "react-icons/md";
-import Image from "next/image";
+import { Chrome, Eye, EyeOff, Github } from "lucide-react";
 import { useSignUp } from "@clerk/nextjs";
 import { useState } from "react";
 import Loading from "@/app/loading";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 
 const Signup = () => {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -130,146 +136,157 @@ const Signup = () => {
     }
   };
 
-  const {
-    sForm,
-    signup,
-    title,
-    inputs,
-    submitB,
-    errMsg,
-    options,
-    socialLoginButtons,
-    line,
-    socialLoginButton,
-    verifyCode,
-    bxl,
-    bxlp,
-    btnLoader,
-    errMsgCode,
-    bxlpActive,
-    input,
-    placeholder,
-  } = styles;
-
   return (
-    <form className={sForm}>
-      {!pendingVerification ? (
-        <div className={signup}>
-          <div className={title}>
-            <h1>خوش اومدی!</h1>
-            <p>برای استفاده از خدمات وب‌سایت، نیازه که اکانت بسازی...</p>
-          </div>
-          <div className={inputs}>
-            <div className={input}>
-              <span className={placeholder}>نام کاربری:</span>
-              <div>
-                <FaUser className={bxl} />
-                <input
-                  type="text"
-                  name="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
+    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
+      <Card className="w-full max-w-md">
+        {!pendingVerification ? (
+          <>
+            <CardHeader className="space-y-1 px-5 py-4 text-center">
+              <CardTitle className="text-2xl">Create your account</CardTitle>
+              <CardDescription>
+                Use your email and password to get started.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5 px-5 pb-5 pt-0">
+              <form onSubmit={submit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    name="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="username"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    placeholder="example@email.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      name="password"
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="********"
+                      className="pl-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-1/2 left-1 h-7 w-7 -translate-y-1/2"
+                      onClick={() => setshowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                )}
+
+                <Button type="submit" className="w-full" disabled={btnLoad}>
+                  {btnLoad ? <Spinner className="size-4" /> : "Create account"}
+                </Button>
+              </form>
+
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">
+                  Or continue with
+                </span>
+                <Separator className="flex-1" />
               </div>
-            </div>
-            <div className={input}>
-              <span className={placeholder}>ایمیل:</span>
-              <div>
-                <MdOutlineAlternateEmail className={bxl} />
-                <input
-                  type="email"
-                  name="email"
-                  value={emailAddress}
-                  onChange={(e) => setEmailAddress(e.target.value)}
-                />
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button
+                  onClick={googleSignup}
+                  variant="outline"
+                  disabled={btnGoogle}
+                >
+                  <Chrome className="size-4" />
+                  {btnGoogle ? <Spinner className="size-4" /> : "Google"}
+                </Button>
+                <Button
+                  onClick={gitHubSignup}
+                  variant="outline"
+                  disabled={btnGitHub}
+                >
+                  <Github className="size-4" />
+                  {btnGitHub ? <Spinner className="size-4" /> : "GitHub"}
+                </Button>
               </div>
-            </div>
-            <div className={input}>
-              <span className={placeholder}>رمز عبور:</span>
-              <div>
-                <FaLock className={bxl} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  name="password"
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <FaEye
-                  className={`${bxlp} ${showPassword ? `${bxlpActive}` : ""}`}
-                  onClick={() => setshowPassword(!showPassword)}
-                />
-              </div>
-            </div>
-          </div>
-          <span className={errMsg}>{error && error}</span>
-          <div className={submitB}>
-            <button onClick={submit} type="submit">
-              {btnLoad ? (
-                <span className={btnLoader}></span>
-              ) : (
-                "ساخت حساب کاربری"
-              )}
-            </button>
-          </div>
-          <div className={line}>
-            <hr />
-            روش‌های دیگر
-            <hr />
-          </div>
-          <div className={socialLoginButtons}>
-            <button onClick={googleSignup} className={socialLoginButton}>
-              <FcGoogle className={bxl} />
-              {btnGoogle ? (
-                <span className={btnLoader}></span>
-              ) : (
-                "ثبت نام با گوگل"
-              )}
-            </button>
-            <button onClick={gitHubSignup} className={socialLoginButton}>
-              <SiGithub className={bxl} />
-              {btnGitHub ? (
-                <span className={btnLoader}></span>
-              ) : (
-                "ثبت نام با گیت‌هاب"
-              )}
-            </button>
-          </div>
-          <div className={options}>
-            <p>
-              قبلا عضوی از ما شدی؟ <Link href="/login">وارد شو</Link>
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className={signup}>
-          <div className={title}>
-            <h1>تائید ایمیل</h1>
-            <p>کد تائیدی که برات ایمیل کردیم رو اینجا وارد کن...</p>
-          </div>
-          <div className={inputs}>
-            <div className={input}>
-              <span className={placeholder}></span>
-              <div>
-                <FaLock className={bxl} />
-                <input
-                  className={verifyCode}
-                  type="text"
-                  name="verify"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-          <span className={errMsgCode}>{error && error}</span>
-          <div className={submitB}>
-            <button onClick={onPressVerify} type="submit">
-              {btnLoad ? "تائید کد" : <span className={btnLoader}></span>}
-            </button>
-          </div>
-        </div>
-      )}
-    </form>
+
+              <p className="text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="font-medium text-foreground hover:underline"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </CardContent>
+          </>
+        ) : (
+          <>
+            <CardHeader className="space-y-1 px-5 py-4 text-center">
+              <CardTitle className="text-2xl">Verify your email</CardTitle>
+              <CardDescription>
+                Enter the code sent to your inbox to complete signup.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-5 pb-5 pt-0">
+              <form onSubmit={onPressVerify} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">Verification code</Label>
+                  <Input
+                    id="code"
+                    type="text"
+                    name="verify"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="123456"
+                  />
+                </div>
+
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                )}
+
+                <Button type="submit" className="w-full">
+                  {btnLoad ? <Spinner className="size-4" /> : "Verify code"}
+                </Button>
+              </form>
+            </CardContent>
+          </>
+        )}
+      </Card>
+    </main>
   );
 };
 

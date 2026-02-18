@@ -2,15 +2,22 @@
 "use client";
 
 import Link from "next/link";
-import styles from "../../styles/Signup.module.scss";
-import { SiGithub } from "react-icons/si";
-import { FcGoogle } from "react-icons/fc";
-import { FaEye, FaLock } from "react-icons/fa";
-import { MdOutlineAlternateEmail } from "react-icons/md";
-import Image from "next/image";
+import { Chrome, Eye, EyeOff, Github } from "lucide-react";
 import { useSignIn } from "@clerk/nextjs";
 import { useState } from "react";
 import Loading from "@/app/loading";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 
 const Login = () => {
   const { isLoaded, signIn, setActive } = useSignIn();
@@ -89,104 +96,105 @@ const Login = () => {
     }
   };
 
-  const {
-    sForm,
-    signup,
-    title,
-    inputs,
-    submitB,
-    errMsg,
-    options,
-    socialLoginButtons,
-    line,
-    socialLoginButton,
-    bxl,
-    bxlp,
-    btnLoader,
-    bxlpActive,
-    input,
-    placeholder,
-  } = styles;
-
   return (
-    <form className={sForm}>
-      <div className={signup}>
-        <div className={title}>
-          <h1>خوش برگشتی!</h1>
-          <p>برای استفاده از خدمات وب‌سایت، نیازه که وارد اکانتت شی...</p>
-        </div>
-        <div className={inputs}>
-          <div className={input}>
-            <span className={placeholder}>ایمیل:</span>
-            <div>
-              <MdOutlineAlternateEmail className={bxl} />
-              <input
+    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1 px-5 py-4 text-center">
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>
+            Sign in with your account details to continue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5 px-5 pb-5 pt-0">
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="identifier">Email or username</Label>
+              <Input
+                id="identifier"
                 type="text"
                 name="email"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="example@email.com"
               />
             </div>
-          </div>
-          <div className={input}>
-            <span className={placeholder}>رمز عبور:</span>
-            <div>
-              <FaLock className={bxl} />
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                name="password"
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <FaEye
-                className={`${bxlp} ${showPassword ? `${bxlpActive}` : ""}`}
-                onClick={() => setshowPassword(!showPassword)}
-              />
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  name="password"
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="********"
+                  className="pl-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1/2 left-1 h-7 w-7 -translate-y-1/2"
+                  onClick={() => setshowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </Button>
+              </div>
             </div>
+
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={btnLoad}>
+              {btnLoad ? <Spinner className="size-4" /> : "Sign in"}
+            </Button>
+          </form>
+
+          <div className="flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">Or continue with</span>
+            <Separator className="flex-1" />
           </div>
-        </div>
-        <span className={errMsg}>{error && error}</span>
-        <div className={submitB}>
-          <button onClick={submit} type="submit">
-            {btnLoad ? (
-              <span className={btnLoader}></span>
-            ) : (
-              "ورود به حساب کاربری"
-            )}
-          </button>
-        </div>
-        <div className={line}>
-          <hr />
-          روش‌های دیگر
-          <hr />
-        </div>
-        <div className={socialLoginButtons}>
-          <button onClick={googleLogin} className={socialLoginButton}>
-            <FcGoogle className={bxl} />
-            {btnGoogle ? <span className={btnLoader}></span> : "ورود با گوگل"}
-          </button>
-          <button onClick={gitHubLogin} className={socialLoginButton}>
-            <SiGithub className={bxl} />
-            {btnGitHub ? (
-              <span className={btnLoader}></span>
-            ) : (
-              "ورود با گیت‌هاب"
-            )}
-          </button>
-        </div>
-        <div className={options}>
-          <p>
-            عضوی از ما نیستی؟ <Link href="/signup">ثبت نام کن</Link>
-          </p>
-        </div>
-        <div className={options}>
-          <p>
-            نیاز به کمک دارم!{" "}
-            <Link href="/forgot-password">رمزم رو فراموش کردم</Link>
-          </p>
-        </div>
-      </div>
-    </form>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button onClick={googleLogin} variant="outline" disabled={btnGoogle}>
+              <Chrome className="size-4" />
+              {btnGoogle ? <Spinner className="size-4" /> : "Google"}
+            </Button>
+            <Button onClick={gitHubLogin} variant="outline" disabled={btnGitHub}>
+              <Github className="size-4" />
+              {btnGitHub ? <Spinner className="size-4" /> : "GitHub"}
+            </Button>
+          </div>
+
+          <div className="space-y-2 text-center text-sm text-muted-foreground">
+            <p>
+              Do not have an account?{" "}
+              <Link href="/signup" className="font-medium text-foreground hover:underline">
+                Sign up
+              </Link>
+            </p>
+            <p>
+              Forgot your password?{" "}
+              <Link
+                href="/forgot-password"
+                className="font-medium text-foreground hover:underline"
+              >
+                Reset it
+              </Link>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </main>
   );
 };
 

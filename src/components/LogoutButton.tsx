@@ -1,8 +1,10 @@
 "use client";
 
 import { useClerk } from "@clerk/nextjs";
-import styles from "../styles/Profile.module.scss";
 import { useState } from "react";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export const LogoutButton = () => {
   const { signOut } = useClerk();
@@ -16,12 +18,9 @@ export const LogoutButton = () => {
   };
 
   return (
-    <button className={styles.userLogout} onClick={Logout}>
-      {loading ? (
-        <span className={styles.btnLoader}></span>
-      ) : (
-        "خروج از حساب کاربری"
-      )}
-    </button>
+    <Button onClick={Logout} disabled={loading} variant="outline">
+      {loading ? <Spinner className="size-4" /> : <LogOut className="size-4" />}
+      Sign out
+    </Button>
   );
 };
