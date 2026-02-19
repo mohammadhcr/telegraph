@@ -76,9 +76,13 @@ const ForgotPassword = () => {
       if (result.status !== "complete") {
         console.log(JSON.stringify(result, null, 2));
       } else if (result.status === "complete") {
-        setActive({ session: result.createdSessionId });
-        await fetch("/api/users/sync", { method: "POST" }).catch(() => null);
-        router.push("/profile");
+        await setActive({
+          session: result.createdSessionId,
+          navigate: async () => {
+            await fetch("/api/users/sync", { method: "POST" }).catch(() => null);
+            router.replace("/profile");
+          },
+        });
       }
     } catch (error: any) {
       console.log(JSON.stringify(error, null, 2));

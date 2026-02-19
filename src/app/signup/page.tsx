@@ -83,9 +83,13 @@ const Signup = () => {
       if (completeSignup.status !== "complete") {
         console.log(JSON.stringify(completeSignup, null, 2));
       } else if (completeSignup.status === "complete") {
-        await setActive({ session: completeSignup.createdSessionId });
-        await fetch("/api/users/sync", { method: "POST" }).catch(() => null);
-        router.push("/chats");
+        await setActive({
+          session: completeSignup.createdSessionId,
+          navigate: async () => {
+            await fetch("/api/users/sync", { method: "POST" }).catch(() => null);
+            router.replace("/chats");
+          },
+        });
       }
     } catch (err: any) {
       console.log(JSON.stringify(err, null, 2));
@@ -106,7 +110,7 @@ const Signup = () => {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_github",
         redirectUrl: "",
-        redirectUrlComplete: `/`,
+        redirectUrlComplete: `/chats`,
       });
 
       setBtnGitHub(false);
@@ -129,7 +133,7 @@ const Signup = () => {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "",
-        redirectUrlComplete: `/`,
+        redirectUrlComplete: `/chats`,
       });
 
       setBtnGoogle(false);
