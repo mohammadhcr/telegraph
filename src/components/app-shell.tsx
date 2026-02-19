@@ -25,7 +25,6 @@ export const AppShell = ({ children }: AppShellProps) => {
   const { user } = useUser();
   const userName = user?.username || "Profile";
   const profileActive = pathname === "/profile";
-  const isChatDetail = pathname.startsWith("/chats/");
 
   useEffect(() => {
     if (!user) return;
@@ -120,7 +119,7 @@ export const AppShell = ({ children }: AppShellProps) => {
         </div>
       </aside>
 
-      <main className={cn("md:pl-[17.5rem]", isChatDetail ? "pb-0" : "pb-20 md:pb-0")}>
+      <main className={cn("md:pl-[17.5rem]")}>
         {children}
       </main>
 

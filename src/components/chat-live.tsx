@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/scroll-area";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type MessageItem = {
@@ -37,6 +38,7 @@ export const ChatLive = ({
   recipientId,
 }: ChatLiveProps) => {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const [chatId, setChatId] = useState<string | null>(initialChatId);
   const [messages, setMessages] = useState<MessageItem[]>(initialMessages);
   const [message, setMessage] = useState("");
@@ -79,7 +81,7 @@ export const ChatLive = ({
           if (next.sender_id !== currentUserId) {
             markSeen();
           }
-        }
+        },
       )
       .subscribe();
 
@@ -95,8 +97,16 @@ export const ChatLive = ({
         const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
         return aTime - bTime;
       }),
-    [messages]
+    [messages],
   );
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [sortedMessages.length]);
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -143,9 +153,13 @@ export const ChatLive = ({
 
   return (
     <>
-      <div className="mx-auto flex h-[calc(100dvh-4.25rem)] w-full max-w-4xl flex-col px-4 py-4">
-        <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto pb-44 md:pb-24">
-          <div className="space-y-3 pt-10">
+      <div className="mx-auto flex h-[100dvh] w-full max-w-4xl flex-col px-4 py-4">
+        <ScrollArea
+          ref={scrollRef}
+          className="min-h-0 flex-1"
+          viewportClassName="pb-36 pr-5 md:pb-20 md:pr-6"
+        >
+          <div className="flex min-h-full flex-col justify-end gap-3 pt-2 md:pt-3">
             {sortedMessages.length ? (
               sortedMessages.map((item) => (
                 <div
@@ -164,7 +178,9 @@ export const ChatLive = ({
                     </div>
                     <p
                       className={`mt-1 px-1 text-[11px] text-muted-foreground ${
-                        item.sender_id === currentUserId ? "text-right" : "text-left"
+                        item.sender_id === currentUserId
+                          ? "text-right"
+                          : "text-left"
                       }`}
                     >
                       {formatLocalTime(item.created_at)}
@@ -173,12 +189,12 @@ export const ChatLive = ({
                 </div>
               ))
             ) : (
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="py-6 text-center text-sm text-muted-foreground">
                 No messages yet. Start the conversation.
               </p>
             )}
           </div>
-        </div>
+        </ScrollArea>
       </div>
 
       <div className="fixed inset-x-0 bottom-[5.5rem] z-40 md:bottom-3 md:left-[17.5rem]">
@@ -194,8 +210,17 @@ export const ChatLive = ({
               className="h-10 rounded-full border-white/10 bg-black/30"
               disabled={sending}
             />
-            <Button type="submit" size="icon" className="h-10 w-10 rounded-full" disabled={sending}>
-              {sending ? <Loader2 className="size-5 animate-spin" /> : <SendHorizontal className="size-5" />}
+            <Button
+              type="submit"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+              disabled={sending}
+            >
+              {sending ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <SendHorizontal className="size-5" />
+              )}
               <span className="sr-only">Send</span>
             </Button>
           </form>
