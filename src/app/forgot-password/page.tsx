@@ -67,20 +67,19 @@ const ForgotPassword = () => {
     setError("");
 
     try {
-      await signIn
-        .attemptFirstFactor({
-          strategy: "reset_password_email_code",
-          code,
-          password,
-        })
-        .then((result) => {
-          if (result.status !== "complete") {
-            console.log(JSON.stringify(result, null, 2));
-          } else if (result.status === "complete") {
-            setActive({ session: result.createdSessionId });
-            router.push("/profile");
-          }
-        });
+      const result = await signIn.attemptFirstFactor({
+        strategy: "reset_password_email_code",
+        code,
+        password,
+      });
+
+      if (result.status !== "complete") {
+        console.log(JSON.stringify(result, null, 2));
+      } else if (result.status === "complete") {
+        setActive({ session: result.createdSessionId });
+        await fetch("/api/users/sync", { method: "POST" }).catch(() => null);
+        router.push("/profile");
+      }
     } catch (error: any) {
       console.log(JSON.stringify(error, null, 2));
       setError(error.errors[0].message);
@@ -90,7 +89,7 @@ const ForgotPassword = () => {
 
   return (
     <Suspense fallback={<Loading />}>
-      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
+      <main className="apple-page flex items-center justify-center px-4 py-8">
         <Card className="w-full max-w-md">
           {!pendingVerification ? (
             <>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, UserRound, UsersRound } from "lucide-react";
+import { MessageSquare, UsersRound } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,12 @@ export const AppShell = ({ children }: AppShellProps) => {
   const { user } = useUser();
   const userName = user?.username || "Profile";
   const profileActive = pathname === "/profile";
+  const isChatDetail = pathname.startsWith("/chats/");
 
   return (
-    <div className="min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-card md:flex md:flex-col">
-        <div className="border-b p-4">
+    <div className="apple-page">
+      <aside className="apple-surface fixed inset-y-2 left-2 hidden w-64 rounded-3xl md:flex md:flex-col">
+        <div className="border-b border-white/10 p-4">
           <p className="text-lg font-semibold">Telegraph</p>
           <p className="text-xs text-muted-foreground">Messenger</p>
         </div>
@@ -50,7 +51,7 @@ export const AppShell = ({ children }: AppShellProps) => {
             );
           })}
         </nav>
-        <div className="mt-auto border-t p-3">
+        <div className="mt-auto border-t border-white/10 p-3">
           <Button
             asChild
             variant={profileActive ? "secondary" : "ghost"}
@@ -67,10 +68,12 @@ export const AppShell = ({ children }: AppShellProps) => {
         </div>
       </aside>
 
-      <main className="pb-20 md:pb-0 md:pl-64">{children}</main>
+      <main className={cn("md:pl-[17.5rem]", isChatDetail ? "pb-0" : "pb-20 md:pb-0")}>
+        {children}
+      </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-3 border-t bg-card px-2 md:hidden">
-        {[...navItems, { href: "/profile", label: "Profile", icon: UserRound }].map((item) => {
+      <nav className="apple-surface fixed inset-x-2 bottom-2 z-40 grid h-16 grid-cols-3 rounded-3xl px-2 md:hidden">
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -88,6 +91,19 @@ export const AppShell = ({ children }: AppShellProps) => {
             </Link>
           );
         })}
+        <Link
+          href="/profile"
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
+            profileActive ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <Avatar className="size-5">
+            <AvatarImage src={user?.imageUrl} alt={userName} />
+            <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <span className="max-w-20 truncate">{userName}</span>
+        </Link>
       </nav>
     </div>
   );

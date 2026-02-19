@@ -12,6 +12,11 @@ export const LogoutButton = () => {
 
   const Logout = async () => {
     setLoading(true);
+    try {
+      await fetch("/api/presence/offline", { method: "POST" });
+    } catch {
+      // Best-effort presence update.
+    }
     await signOut({
       redirectUrl: "/",
     });

@@ -2,12 +2,9 @@ import { Spinner } from "@/components/ui/spinner";
 
 const Loading = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div
-        className="flex flex-col
-       items-center gap-2 rounded-lg border bg-card px-4 py-3 shadow-sm"
-      >
-        <Spinner className="size-8" />
+    <div className="apple-page flex items-center justify-center px-4">
+      <div className="apple-surface flex flex-col items-center gap-2 rounded-2xl px-5 py-4">
+        <Spinner className="size-8 text-primary" />
         <span className="text-sm text-muted-foreground">Loading...</span>
       </div>
     </div>

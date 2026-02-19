@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Chrome, Eye, EyeOff, Github } from "lucide-react";
 import { useSignUp } from "@clerk/nextjs";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Loading from "@/app/loading";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 const Signup = () => {
   const { isLoaded, signUp, setActive } = useSignUp();
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
@@ -82,6 +84,8 @@ const Signup = () => {
         console.log(JSON.stringify(completeSignup, null, 2));
       } else if (completeSignup.status === "complete") {
         await setActive({ session: completeSignup.createdSessionId });
+        await fetch("/api/users/sync", { method: "POST" }).catch(() => null);
+        router.push("/chats");
       }
     } catch (err: any) {
       console.log(JSON.stringify(err, null, 2));
@@ -137,7 +141,7 @@ const Signup = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
+    <main className="apple-page flex items-center justify-center px-4 py-8">
       <Card className="w-full max-w-md">
         {!pendingVerification ? (
           <>

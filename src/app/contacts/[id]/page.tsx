@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { contactPlaceholders } from "@/lib/contact-placeholders";
+import { formatLastSeen } from "@/lib/date";
+import { getUserById, syncUserFromClerk } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Telegraph | Contact Profile",
@@ -24,28 +25,31 @@ const ContactProfilePage = async ({ params }: ContactProfilePageProps) => {
     redirect("/");
   }
 
-  const { id } = await params;
-  const contact = contactPlaceholders.find((item) => item.id === id);
+  const clerkUser = await currentUser();
+  if (clerkUser) {
+    await syncUserFromClerk(clerkUser);
+  }
 
-  if (!contact) {
+  const { id } = await params;
+  const contact = await getUserById(id);
+
+  if (!contact || contact.id === userId) {
     redirect("/contacts");
   }
 
   return (
     <AppShell>
-      <main className="flex min-h-screen items-center justify-center px-4 py-6">
+      <main className="apple-page flex items-center justify-center px-4 py-6">
         <Card className="w-full max-w-2xl">
           <CardHeader className="items-center gap-3 px-6 py-4 text-center">
             <Avatar className="mx-auto size-32">
-              <AvatarImage src={contact.image} alt={contact.username} />
-              <AvatarFallback>
-                {contact.username.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
+              <AvatarImage src={contact.avatar ?? undefined} alt={contact.username} />
+              <AvatarFallback>{contact.username.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="space-y-1">
               <CardTitle className="text-2xl">{contact.username}</CardTitle>
-              <p className="text-x text-muted-foreground">
-                {contact.isOnline ? "Online" : contact.lastSeen}
+              <p className="text-xs text-muted-foreground">
+                {contact.is_online ? "Online" : formatLastSeen(contact.last_seen)}
               </p>
             </div>
           </CardHeader>

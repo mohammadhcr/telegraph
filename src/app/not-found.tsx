@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const NotFound = () => {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
+    <main className="apple-page flex items-center justify-center px-4 py-8">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <p className="text-6xl font-bold tracking-tight">404</p>
