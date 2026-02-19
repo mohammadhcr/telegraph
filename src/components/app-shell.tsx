@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { MessageSquare, UsersRound } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -19,10 +21,60 @@ const navItems = [
 
 export const AppShell = ({ children }: AppShellProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useUser();
   const userName = user?.username || "Profile";
   const profileActive = pathname === "/profile";
   const isChatDetail = pathname.startsWith("/chats/");
+
+  useEffect(() => {
+    if (!user) return;
+
+    const sendOnline = () =>
+      fetch("/api/presence/online", {
+        method: "POST",
+        keepalive: true,
+      }).catch(() => null);
+
+    const sendOffline = () =>
+      navigator.sendBeacon("/api/presence/offline", new Blob([], { type: "application/json" }));
+
+    sendOnline();
+    const interval = setInterval(sendOnline, 45_000);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        sendOffline();
+      } else {
+        sendOnline();
+      }
+    };
+
+    const refreshDebounced = (() => {
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+      return () => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => router.refresh(), 250);
+      };
+    })();
+
+    const channel = supabaseBrowser
+      .channel(`app-realtime:${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, refreshDebounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, refreshDebounced)
+      .on("postgres_changes", { event: "*", schema: "public", table: "users" }, refreshDebounced)
+      .subscribe();
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("beforeunload", sendOffline);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("beforeunload", sendOffline);
+      supabaseBrowser.removeChannel(channel);
+    };
+  }, [router, user]);
 
   return (
     <div className="apple-page">

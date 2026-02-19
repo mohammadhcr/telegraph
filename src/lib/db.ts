@@ -81,6 +81,18 @@ export const setUserOffline = async (userId: string) => {
   if (error) throw error;
 };
 
+export const setUserOnline = async (userId: string) => {
+  const { error } = await supabaseServer
+    .from("users")
+    .update({
+      is_online: true,
+      last_seen: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) throw error;
+};
+
 export const getUserById = async (id: string) => {
   const { data, error } = await supabaseServer
     .from("users")
