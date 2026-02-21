@@ -13,9 +13,9 @@ export const POST = async (req: Request) => {
     | null;
 
   const recipientId = body?.recipientId?.trim();
-  const content = body?.content?.trim();
+  const content = body?.content;
 
-  if (!recipientId || !content) {
+  if (!recipientId || typeof content !== "string") {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 

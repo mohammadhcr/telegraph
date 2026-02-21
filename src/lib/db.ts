@@ -36,6 +36,8 @@ export type MessageRow = {
 
 const fallbackUsername = (userId: string) => `user_${userId.slice(-8)}`;
 const ONLINE_TTL_MS = 90_000;
+const normalizeMessageContent = (value: string) =>
+  value.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n");
 
 export const isUserOnlineNow = (user: Pick<UserRow, "is_online" | "last_seen">) => {
   if (!user.is_online || !user.last_seen) return false;
@@ -183,15 +185,15 @@ export const markChatMessagesAsSeen = async (chatId: string, viewerId: string) =
 };
 
 export const sendMessage = async (chatId: string, senderId: string, content: string) => {
-  const trimmed = content.trim();
-  if (!trimmed) return null;
+  const normalized = normalizeMessageContent(content);
+  if (!normalized.replace(/\s/g, "")) return null;
 
   const { data, error } = await supabaseServer
     .from("messages")
     .insert({
       chat_id: chatId,
       sender_id: senderId,
-      content: trimmed,
+      content: normalized,
       created_at: new Date().toISOString(),
       is_seen: false,
     })

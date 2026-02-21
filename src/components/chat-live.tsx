@@ -30,6 +30,9 @@ const formatLocalTime = (iso?: string | null) => {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
+const normalizeOutgoingMessage = (value: string) =>
+  value.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n");
+
 export const ChatLive = ({
   initialChatId,
   initialMessages,
@@ -197,8 +200,8 @@ export const ChatLive = ({
   }, []);
 
   const submitMessage = async () => {
-    const content = message.trim();
-    if (!content || sending) return;
+    const content = normalizeOutgoingMessage(message);
+    if (!content.replace(/\s/g, "") || sending) return;
 
     setSending(true);
     try {
@@ -279,7 +282,7 @@ export const ChatLive = ({
                           : "rounded-bl-md bg-zinc-800 text-zinc-100"
                       }`}
                     >
-                      <p>{item.content}</p>
+                      <p className="whitespace-pre-wrap break-words">{item.content}</p>
                     </div>
                     <p
                       className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground ${
