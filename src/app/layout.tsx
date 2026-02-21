@@ -54,7 +54,7 @@ const vazirmatn = localFont({
 
 export const metadata: Metadata = {
   title: "Telegraph",
-  description: "Telegraph Messenger",
+  description: "Telegraph",
 };
 
 export const viewport: Viewport = {
@@ -76,7 +76,9 @@ export default function RootLayout({
         <head>
           <link rel="manifest" href="/manifest.json" />
         </head>
-        <body className={`${inter.variable} ${vazirmatn.variable} min-h-screen`}>
+        <body
+          className={`${inter.variable} ${vazirmatn.variable} min-h-screen`}
+        >
           <PWARegister />
           <ClerkLoading>
             <Loading />

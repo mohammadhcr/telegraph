@@ -36,7 +36,10 @@ export const AppShell = ({ children }: AppShellProps) => {
       }).catch(() => null);
 
     const sendOffline = () =>
-      navigator.sendBeacon("/api/presence/offline", new Blob([], { type: "application/json" }));
+      navigator.sendBeacon(
+        "/api/presence/offline",
+        new Blob([], { type: "application/json" }),
+      );
 
     sendOnline();
     const interval = setInterval(sendOnline, 45_000);
@@ -59,9 +62,21 @@ export const AppShell = ({ children }: AppShellProps) => {
 
     const channel = supabaseBrowser
       .channel(`app-realtime:${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, refreshDebounced)
-      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, refreshDebounced)
-      .on("postgres_changes", { event: "*", schema: "public", table: "users" }, refreshDebounced)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        refreshDebounced,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chats" },
+        refreshDebounced,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "users" },
+        refreshDebounced,
+      )
       .subscribe();
 
     document.addEventListener("visibilitychange", onVisibility);
@@ -85,7 +100,8 @@ export const AppShell = ({ children }: AppShellProps) => {
         <nav className="space-y-2 p-3">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Button
@@ -111,7 +127,9 @@ export const AppShell = ({ children }: AppShellProps) => {
             <Link href="/profile">
               <Avatar className="size-8">
                 <AvatarImage src={user?.imageUrl} alt={userName} />
-                <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>
+                  {userName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <span className="truncate">{userName}</span>
             </Link>
@@ -119,14 +137,13 @@ export const AppShell = ({ children }: AppShellProps) => {
         </div>
       </aside>
 
-      <main className={cn("md:pl-[17.5rem]")}>
-        {children}
-      </main>
+      <main className={cn("md:pl-[17.5rem]")}>{children}</main>
 
       <nav className="apple-surface fixed inset-x-2 bottom-2 z-40 grid h-16 grid-cols-3 rounded-3xl px-2 md:hidden">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive =
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link
@@ -134,10 +151,10 @@ export const AppShell = ({ children }: AppShellProps) => {
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
-                isActive ? "text-primary" : "text-muted-foreground"
+                isActive ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon className="size-4" />
+              <Icon className="size-5" />
               <span>{item.label}</span>
             </Link>
           );
@@ -146,14 +163,16 @@ export const AppShell = ({ children }: AppShellProps) => {
           href="/profile"
           className={cn(
             "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
-            profileActive ? "text-primary" : "text-muted-foreground"
+            profileActive ? "text-primary" : "text-muted-foreground",
           )}
         >
-          <Avatar className="size-5">
+          <Avatar className="size-6">
             <AvatarImage src={user?.imageUrl} alt={userName} />
-            <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarFallback>
+              {userName.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
-          <span className="max-w-20 truncate">{userName}</span>
+          <span className="max-w-24 truncate">{userName}</span>
         </Link>
       </nav>
     </div>

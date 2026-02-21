@@ -2,10 +2,26 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, CheckCheck, Loader2, SendHorizontal } from "lucide-react";
+import {
+  Check,
+  CheckCheck,
+  CheckCheckIcon,
+  CheckCircle,
+  CheckCircle2,
+  CheckIcon,
+  Loader2,
+  SendHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/scroll-area";
+import {
+  formatMessageTime,
+  formatSmartDayLabel,
+  getLocalDayKey,
+} from "@/lib/date";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { FaCheck } from "react-icons/fa6";
+import { FaCheckCircle } from "react-icons/fa";
 
 type MessageItem = {
   id: string;
@@ -21,13 +37,6 @@ type ChatLiveProps = {
   initialMessages: MessageItem[];
   currentUserId: string;
   recipientId: string;
-};
-
-const formatLocalTime = (iso?: string | null) => {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
 const normalizeOutgoingMessage = (value: string) =>
@@ -278,42 +287,56 @@ export const ChatLive = ({
         >
           <div className="flex min-h-full flex-col justify-end gap-3 pt-2 md:pt-3">
             {sortedMessages.length ? (
-              sortedMessages.map((item) => (
-                <div
-                  key={item.id}
-                  className={`flex ${item.sender_id === currentUserId ? "justify-end" : "justify-start"}`}
-                >
-                  <div className="max-w-[82%]">
+              sortedMessages.map((item, index) => {
+                const dayKey = getLocalDayKey(item.created_at);
+                const prevDayKey =
+                  index > 0
+                    ? getLocalDayKey(sortedMessages[index - 1]?.created_at)
+                    : "";
+                const showDaySeparator = dayKey && dayKey !== prevDayKey;
+
+                return (
+                  <div key={item.id}>
+                    {showDaySeparator ? (
+                      <div className="my-2 flex items-center justify-center">
+                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-muted-foreground">
+                          {formatSmartDayLabel(item.created_at)}
+                        </span>
+                      </div>
+                    ) : null}
+
                     <div
-                      className={`rounded-[22px] px-4 py-2 text-sm shadow-sm ${
-                        item.sender_id === currentUserId
-                          ? "rounded-br-md bg-sky-500 text-white"
-                          : "rounded-bl-md bg-zinc-800 text-zinc-100"
-                      }`}
+                      className={`flex ${item.sender_id === currentUserId ? "justify-end" : "justify-start"}`}
                     >
-                      <p className="whitespace-pre-wrap break-words">
-                        {item.content}
-                      </p>
+                      <div className="max-w-[82%]">
+                        <div
+                          className={`rounded-[22px] px-4 py-2 text-[14px] shadow-sm ${
+                            item.sender_id === currentUserId
+                              ? "rounded-br-md bg-sky-500 text-white"
+                              : "rounded-bl-md bg-zinc-800 text-zinc-100"
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap break-words">
+                            {item.content}
+                          </p>
+                        </div>
+                        <p
+                          className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground justify-end`}
+                        >
+                          <span>{formatMessageTime(item.created_at)}</span>
+                          {item.sender_id === currentUserId ? (
+                            item.is_seen ? (
+                              <FaCheck className="size-3 text-sky-400" />
+                            ) : (
+                              <FaCheck className="size-3" />
+                            )
+                          ) : null}
+                        </p>
+                      </div>
                     </div>
-                    <p
-                      className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground ${
-                        item.sender_id === currentUserId
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      <span>{formatLocalTime(item.created_at)}</span>
-                      {item.sender_id === currentUserId ? (
-                        item.is_seen ? (
-                          <CheckCheck className="size-3 text-sky-400" />
-                        ) : (
-                          <Check className="size-3" />
-                        )
-                      ) : null}
-                    </p>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 No messages yet. Start the conversation.
