@@ -25,6 +25,7 @@ export const AppShell = ({ children }: AppShellProps) => {
   const { user } = useUser();
   const userName = user?.username || "Profile";
   const profileActive = pathname === "/profile";
+  const isChatRoomPage = pathname.startsWith("/chats/");
 
   useEffect(() => {
     if (!user) return;
@@ -138,7 +139,16 @@ export const AppShell = ({ children }: AppShellProps) => {
   }, []);
 
   return (
-    <div className="apple-page">
+    <div
+      className="apple-page"
+      style={
+        isChatRoomPage
+          ? {
+              ["--chat-composer-bottom" as string]: "max(0.35rem, env(safe-area-inset-bottom))",
+            }
+          : undefined
+      }
+    >
       <aside className="apple-surface fixed inset-y-2 left-2 hidden w-64 rounded-3xl md:flex md:flex-col">
         <div className="border-b border-white/10 p-4">
           <p className="text-lg font-semibold">Telegraph</p>
@@ -186,42 +196,44 @@ export const AppShell = ({ children }: AppShellProps) => {
 
       <main className={cn("md:pl-[17.5rem]")}>{children}</main>
 
-      <nav className="mobile-tabbar apple-surface fixed inset-x-2 bottom-2 z-40 grid h-16 grid-cols-3 rounded-3xl px-2 md:hidden">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+      {!isChatRoomPage ? (
+        <nav className="mobile-tabbar apple-surface fixed inset-x-2 bottom-2 z-40 grid h-16 grid-cols-3 rounded-3xl px-2 md:hidden">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
-                isActive ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <Icon className="size-5" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-        <Link
-          href="/profile"
-          className={cn(
-            "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
-            profileActive ? "text-primary" : "text-muted-foreground",
-          )}
-        >
-          <Avatar className="size-6">
-            <AvatarImage src={user?.imageUrl} alt={userName} />
-            <AvatarFallback>
-              {userName.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="max-w-24 truncate">{userName}</span>
-        </Link>
-      </nav>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
+                  isActive ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                <Icon className="size-5" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+          <Link
+            href="/profile"
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
+              profileActive ? "text-primary" : "text-muted-foreground",
+            )}
+          >
+            <Avatar className="size-6">
+              <AvatarImage src={user?.imageUrl} alt={userName} />
+              <AvatarFallback>
+                {userName.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="max-w-24 truncate">{userName}</span>
+          </Link>
+        </nav>
+      ) : null}
     </div>
   );
 };

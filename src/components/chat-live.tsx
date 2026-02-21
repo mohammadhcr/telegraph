@@ -2,12 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Check,
-  CheckCheck,
-  Loader2,
-  SendHorizontal,
-} from "lucide-react";
+import { Check, CheckCheck, Loader2, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/scroll-area";
 import {
@@ -256,8 +251,7 @@ export const ChatLive = ({
     }
   };
 
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSend = async () => {
     await submitMessage();
   };
 
@@ -278,7 +272,7 @@ export const ChatLive = ({
         <ScrollArea
           ref={scrollRef}
           className="min-h-0 flex-1"
-          viewportClassName="pb-36 pt-20 pr-2 md:pb-20 md:pr-3"
+          viewportClassName="pb-20 pt-20 pr-2 md:pr-3"
         >
           <div className="flex min-h-full flex-col justify-end gap-3 pt-2 md:pt-3">
             {sortedMessages.length ? (
@@ -342,14 +336,12 @@ export const ChatLive = ({
       </div>
 
       <div className="chat-composer fixed inset-x-0 z-40 md:bottom-3 md:left-[17.5rem]">
-        <div className="mx-auto w-full max-w-4xl px-3 md:px-4">
-          <form
-            onSubmit={handleSend}
-            className="apple-surface flex items-center gap-3 rounded-3xl px-3 py-2"
-          >
+        <div className="mx-auto w-full max-w-4xl pb-2 px-3 md:px-4">
+          <div className="apple-surface flex items-center gap-3 rounded-3xl px-3 py-3">
             <div className="relative min-w-0 flex-1">
               <textarea
                 ref={textareaRef}
+                name="chat-message"
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 onKeyDown={handleMessageKeyDown}
@@ -363,6 +355,8 @@ export const ChatLive = ({
                 autoCapitalize="off"
                 spellCheck={false}
                 enterKeyHint="send"
+                inputMode="text"
+                aria-autocomplete="none"
                 autoComplete="off"
                 className="no-native-scrollbar min-h-10 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm outline-none placeholder:text-muted-foreground"
                 disabled={sending}
@@ -384,10 +378,13 @@ export const ChatLive = ({
               )}
             </div>
             <Button
-              type="submit"
+              type="button"
               size="icon"
               className="h-10 w-10 rounded-full"
               disabled={sending}
+              onClick={() => {
+                void handleSend();
+              }}
             >
               {sending ? (
                 <Loader2 className="size-5 animate-spin" />
@@ -396,7 +393,7 @@ export const ChatLive = ({
               )}
               <span className="sr-only">Send</span>
             </Button>
-          </form>
+          </div>
         </div>
       </div>
     </>
