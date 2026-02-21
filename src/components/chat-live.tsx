@@ -5,10 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   CheckCheck,
-  CheckCheckIcon,
-  CheckCircle,
-  CheckCircle2,
-  CheckIcon,
   Loader2,
   SendHorizontal,
 } from "lucide-react";
@@ -21,7 +17,6 @@ import {
 } from "@/lib/date";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { FaCheck } from "react-icons/fa6";
-import { FaCheckCircle } from "react-icons/fa";
 
 type MessageItem = {
   id: string;
@@ -283,7 +278,7 @@ export const ChatLive = ({
         <ScrollArea
           ref={scrollRef}
           className="min-h-0 flex-1"
-          viewportClassName="pb-36 pt-20 pr-3 md:pb-20 md:pr-6"
+          viewportClassName="pb-36 pt-20 pr-2 md:pb-20 md:pr-3"
         >
           <div className="flex min-h-full flex-col justify-end gap-3 pt-2 md:pt-3">
             {sortedMessages.length ? (
@@ -298,8 +293,8 @@ export const ChatLive = ({
                 return (
                   <div key={item.id}>
                     {showDaySeparator ? (
-                      <div className="my-2 flex items-center justify-center">
-                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-muted-foreground">
+                      <div className="my-4 flex items-center justify-center">
+                        <span className="rounded-full bg-white/10 px-4 py-1 text-xs text-muted-foreground">
                           {formatSmartDayLabel(item.created_at)}
                         </span>
                       </div>
@@ -346,7 +341,7 @@ export const ChatLive = ({
         </ScrollArea>
       </div>
 
-      <div className="fixed inset-x-0 bottom-[5.5rem] z-40 md:bottom-3 md:left-[17.5rem]">
+      <div className="chat-composer fixed inset-x-0 z-40 md:bottom-3 md:left-[17.5rem]">
         <div className="mx-auto w-full max-w-4xl px-3 md:px-4">
           <form
             onSubmit={handleSend}
@@ -364,6 +359,11 @@ export const ChatLive = ({
                 }}
                 placeholder="Message..."
                 rows={1}
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                enterKeyHint="send"
+                autoComplete="off"
                 className="no-native-scrollbar min-h-10 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm outline-none placeholder:text-muted-foreground"
                 disabled={sending}
               />

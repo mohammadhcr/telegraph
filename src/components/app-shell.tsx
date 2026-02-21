@@ -90,6 +90,53 @@ export const AppShell = ({ children }: AppShellProps) => {
     };
   }, [router, user]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+
+    const updateKeyboardMetrics = () => {
+      const viewport = window.visualViewport;
+      if (!viewport) {
+        root.style.setProperty("--keyboard-height", "0px");
+        root.removeAttribute("data-keyboard-open");
+        return;
+      }
+
+      const keyboardHeight = Math.max(
+        0,
+        Math.round(window.innerHeight - viewport.height - viewport.offsetTop),
+      );
+      const isOpen = keyboardHeight > 120;
+
+      root.style.setProperty("--keyboard-height", `${keyboardHeight}px`);
+      if (isOpen) {
+        root.setAttribute("data-keyboard-open", "true");
+      } else {
+        root.removeAttribute("data-keyboard-open");
+      }
+    };
+
+    updateKeyboardMetrics();
+    window.visualViewport?.addEventListener("resize", updateKeyboardMetrics);
+    window.visualViewport?.addEventListener("scroll", updateKeyboardMetrics);
+    window.addEventListener("focusin", updateKeyboardMetrics);
+    window.addEventListener("focusout", updateKeyboardMetrics);
+
+    return () => {
+      window.visualViewport?.removeEventListener(
+        "resize",
+        updateKeyboardMetrics,
+      );
+      window.visualViewport?.removeEventListener(
+        "scroll",
+        updateKeyboardMetrics,
+      );
+      window.removeEventListener("focusin", updateKeyboardMetrics);
+      window.removeEventListener("focusout", updateKeyboardMetrics);
+      root.style.setProperty("--keyboard-height", "0px");
+      root.removeAttribute("data-keyboard-open");
+    };
+  }, []);
+
   return (
     <div className="apple-page">
       <aside className="apple-surface fixed inset-y-2 left-2 hidden w-64 rounded-3xl md:flex md:flex-col">
@@ -139,7 +186,7 @@ export const AppShell = ({ children }: AppShellProps) => {
 
       <main className={cn("md:pl-[17.5rem]")}>{children}</main>
 
-      <nav className="apple-surface fixed inset-x-2 bottom-2 z-40 grid h-16 grid-cols-3 rounded-3xl px-2 md:hidden">
+      <nav className="mobile-tabbar apple-surface fixed inset-x-2 bottom-2 z-40 grid h-16 grid-cols-3 rounded-3xl px-2 md:hidden">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =

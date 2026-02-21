@@ -46,6 +46,8 @@
 }
 
 :root {
+  --keyboard-height: 0px;
+  --chat-composer-bottom: calc(5.5rem + env(safe-area-inset-bottom));
   --radius: 0.625rem;
   --background: oklch(0.16 0.01 275);
   --foreground: oklch(0.98 0 0);
@@ -199,5 +201,26 @@
     width: 0 !important;
     height: 0 !important;
     display: none;
+  }
+
+  @media (max-width: 767px) {
+    .chat-composer {
+      bottom: var(--chat-composer-bottom);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mobile-tabbar {
+      transform: translateY(var(--keyboard-height));
+      transition: transform 180ms ease;
+      will-change: transform;
+    }
+
+    html[data-keyboard-open="true"] {
+      --chat-composer-bottom: max(0.35rem, env(safe-area-inset-bottom));
+    }
+
+    html[data-keyboard-open="true"] .mobile-tabbar {
+      pointer-events: none;
+    }
   }
 }

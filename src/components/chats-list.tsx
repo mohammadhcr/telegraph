@@ -88,7 +88,7 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
                   disabled={busy}
                   onClick={() => openChat(chat.userId)}
                 >
-                  <CardContent className="flex items-center justify-between gap-4 px-4 py-3">
+                  <CardContent className="flex items-center justify-between gap-4 px-5 py-4">
                     <div className="flex min-w-0 items-center gap-4">
                       <Avatar className="size-12">
                         <AvatarImage
