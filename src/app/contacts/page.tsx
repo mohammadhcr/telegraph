@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/app-shell";
 import { ContactsList } from "@/components/contacts-list";
 import { formatLastSeen } from "@/lib/date";
 import { getContacts, isUserOnlineNow, syncUserFromClerk } from "@/lib/db";
@@ -31,11 +30,9 @@ const ContactsPage = async () => {
   }));
 
   return (
-    <AppShell>
-      <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-3 md:h-[100dvh]">
-        <ContactsList contacts={contactsView} />
-      </main>
-    </AppShell>
+    <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-3 md:h-[100dvh]">
+      <ContactsList contacts={contactsView} />
+    </main>
   );
 };
 

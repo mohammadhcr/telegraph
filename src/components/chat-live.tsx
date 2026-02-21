@@ -274,7 +274,7 @@ export const ChatLive = ({
         <ScrollArea
           ref={scrollRef}
           className="min-h-0 flex-1"
-          viewportClassName="pb-36 pr-3 md:pb-20 md:pr-6"
+          viewportClassName="pb-36 pt-20 pr-3 md:pb-20 md:pr-6"
         >
           <div className="flex min-h-full flex-col justify-end gap-3 pt-2 md:pt-3">
             {sortedMessages.length ? (
@@ -327,7 +327,7 @@ export const ChatLive = ({
         <div className="mx-auto w-full max-w-4xl px-3 md:px-4">
           <form
             onSubmit={handleSend}
-            className="apple-surface flex items-end gap-3 rounded-3xl px-3 py-2"
+            className="apple-surface flex items-center gap-3 rounded-3xl px-3 py-2"
           >
             <div className="relative min-w-0 flex-1">
               <textarea

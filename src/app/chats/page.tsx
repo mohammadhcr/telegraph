@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/app-shell";
 import { ChatsList } from "@/components/chats-list";
 import { getChatList, syncUserFromClerk } from "@/lib/db";
 import { formatChatUpdatedAt } from "@/lib/date";
@@ -34,11 +33,9 @@ const ChatsPage = async () => {
   }));
 
   return (
-    <AppShell>
-      <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-3 md:h-[100dvh]">
-        <ChatsList chats={chatsView} />
-      </main>
-    </AppShell>
+    <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-3 md:h-[100dvh]">
+      <ChatsList chats={chatsView} />
+    </main>
   );
 };
 
