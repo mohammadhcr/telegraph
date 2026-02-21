@@ -258,7 +258,7 @@ export const ChatLive = ({
   const handleMessageKeyDown = (
     event: React.KeyboardEvent<HTMLTextAreaElement>,
   ) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       if (!sending && message.trim()) {
         void submitMessage();
@@ -299,7 +299,7 @@ export const ChatLive = ({
                     >
                       <div className="max-w-[82%]">
                         <div
-                          className={`rounded-[22px] px-4 py-2 text-[14px] shadow-sm ${
+                          className={`rounded-[22px] px-4 py-2 text-[14px] md:text-[16px] shadow-sm ${
                             item.sender_id === currentUserId
                               ? "rounded-br-md bg-sky-500 text-white"
                               : "rounded-bl-md bg-zinc-800 text-zinc-100"
@@ -336,8 +336,8 @@ export const ChatLive = ({
       </div>
 
       <div className="chat-composer fixed inset-x-0 z-40 md:bottom-3 md:left-[17.5rem]">
-        <div className="mx-auto w-full max-w-4xl pb-2 px-3 md:px-4">
-          <div className="apple-surface flex items-center gap-3 rounded-3xl px-3 py-3">
+        <div className="mx-auto w-full max-w-4xl px-3 md:px-4 mb-2">
+          <div className="apple-surface flex items-end gap-3 rounded-3xl px-3 py-2">
             <div className="relative min-w-0 flex-1">
               <textarea
                 ref={textareaRef}
@@ -349,16 +349,16 @@ export const ChatLive = ({
                   updateComposerIndicator();
                   revealComposerIndicator();
                 }}
-                placeholder="Message..."
+                placeholder="Message"
                 rows={1}
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
-                enterKeyHint="send"
+                enterKeyHint="enter"
                 inputMode="text"
                 aria-autocomplete="none"
                 autoComplete="off"
-                className="no-native-scrollbar min-h-10 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm outline-none placeholder:text-muted-foreground"
+                className="flex items-center justify-center no-native-scrollbar min-h-10 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-[16px] leading-5 outline-none placeholder:text-muted-foreground"
                 disabled={sending}
               />
               {composerCanScroll && (
