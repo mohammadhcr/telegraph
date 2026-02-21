@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, SendHorizontal } from "lucide-react";
+import { Check, CheckCheck, Loader2, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/scroll-area";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
@@ -39,10 +38,16 @@ export const ChatLive = ({
 }: ChatLiveProps) => {
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const composerHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [chatId, setChatId] = useState<string | null>(initialChatId);
   const [messages, setMessages] = useState<MessageItem[]>(initialMessages);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [composerCanScroll, setComposerCanScroll] = useState(false);
+  const [composerThumbTop, setComposerThumbTop] = useState(0);
+  const [composerThumbHeight, setComposerThumbHeight] = useState(0);
+  const [showComposerIndicator, setShowComposerIndicator] = useState(false);
 
   useEffect(() => {
     setMessages(initialMessages);
@@ -83,6 +88,21 @@ export const ChatLive = ({
           }
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          const next = payload.new as MessageItem;
+          setMessages((prev) =>
+            prev.map((item) => (item.id === next.id ? { ...item, ...next } : item)),
+          );
+        },
+      )
       .subscribe();
 
     return () => {
@@ -108,8 +128,75 @@ export const ChatLive = ({
     });
   }, [sortedMessages.length]);
 
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const updateComposerSize = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const computed = window.getComputedStyle(textarea);
+    const lineHeight = Number.parseFloat(computed.lineHeight) || 20;
+    const paddingTop = Number.parseFloat(computed.paddingTop) || 0;
+    const paddingBottom = Number.parseFloat(computed.paddingBottom) || 0;
+    const maxHeight = lineHeight * 5 + paddingTop + paddingBottom;
+
+    textarea.style.height = "auto";
+    const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > nextHeight + 1 ? "auto" : "hidden";
+  };
+
+  const updateComposerIndicator = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = textarea;
+    const hasOverflow = scrollHeight > clientHeight + 1;
+    setComposerCanScroll(hasOverflow);
+
+    if (!hasOverflow) {
+      setComposerThumbTop(0);
+      setComposerThumbHeight(0);
+      setShowComposerIndicator(false);
+      return;
+    }
+
+    const railHeight = clientHeight - 4;
+    const nextThumbHeight = Math.max(
+      14,
+      Math.round((clientHeight / scrollHeight) * railHeight),
+    );
+    const maxOffset = Math.max(0, railHeight - nextThumbHeight);
+    const progress =
+      scrollHeight === clientHeight ? 0 : scrollTop / (scrollHeight - clientHeight);
+
+    setComposerThumbHeight(nextThumbHeight);
+    setComposerThumbTop(Math.round(progress * maxOffset));
+  };
+
+  const revealComposerIndicator = () => {
+    if (!composerCanScroll) return;
+    setShowComposerIndicator(true);
+    if (composerHideTimeoutRef.current) {
+      clearTimeout(composerHideTimeoutRef.current);
+    }
+    composerHideTimeoutRef.current = setTimeout(() => {
+      setShowComposerIndicator(false);
+    }, 1200);
+  };
+
+  useEffect(() => {
+    updateComposerSize();
+    updateComposerIndicator();
+  }, [message]);
+
+  useEffect(() => {
+    return () => {
+      if (composerHideTimeoutRef.current) {
+        clearTimeout(composerHideTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const submitMessage = async () => {
     const content = message.trim();
     if (!content || sending) return;
 
@@ -143,11 +230,29 @@ export const ChatLive = ({
       }
 
       setMessage("");
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.scrollTop = 0;
+      }
       router.refresh();
     } catch (error) {
       console.error(error);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await submitMessage();
+  };
+
+  const handleMessageKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (!sending && message.trim()) {
+        void submitMessage();
+      }
     }
   };
 
@@ -177,13 +282,18 @@ export const ChatLive = ({
                       <p>{item.content}</p>
                     </div>
                     <p
-                      className={`mt-1 px-1 text-[11px] text-muted-foreground ${
-                        item.sender_id === currentUserId
-                          ? "text-right"
-                          : "text-left"
+                      className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground ${
+                        item.sender_id === currentUserId ? "justify-end" : "justify-start"
                       }`}
                     >
-                      {formatLocalTime(item.created_at)}
+                      <span>{formatLocalTime(item.created_at)}</span>
+                      {item.sender_id === currentUserId ? (
+                        item.is_seen ? (
+                          <CheckCheck className="size-3 text-sky-400" />
+                        ) : (
+                          <Check className="size-3" />
+                        )
+                      ) : null}
                     </p>
                   </div>
                 </div>
@@ -201,15 +311,39 @@ export const ChatLive = ({
         <div className="mx-auto w-full max-w-4xl px-3 md:px-4">
           <form
             onSubmit={handleSend}
-            className="apple-surface flex items-center gap-3 rounded-3xl px-3 py-2"
+            className="apple-surface flex items-end gap-3 rounded-3xl px-3 py-2"
           >
-            <Input
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              placeholder="Message..."
-              className="h-10 rounded-full border-white/10 bg-black/30"
-              disabled={sending}
-            />
+            <div className="relative min-w-0 flex-1">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                onKeyDown={handleMessageKeyDown}
+                onScroll={() => {
+                  updateComposerIndicator();
+                  revealComposerIndicator();
+                }}
+                placeholder="Message..."
+                rows={1}
+                className="no-native-scrollbar min-h-10 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm outline-none placeholder:text-muted-foreground"
+                disabled={sending}
+              />
+              {composerCanScroll && (
+                <div
+                  className={`pointer-events-none absolute inset-y-[6px] right-2 w-1 transition-opacity duration-300 ${
+                    showComposerIndicator ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <div
+                    className="absolute right-0 w-1 rounded-full bg-sky-400/40"
+                    style={{
+                      top: composerThumbTop,
+                      height: composerThumbHeight,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
             <Button
               type="submit"
               size="icon"

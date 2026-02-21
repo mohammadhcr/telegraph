@@ -15,9 +15,11 @@ const RAIL_PADDING = 2;
 export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
   ({ className, viewportClassName, children }, forwardedRef) => {
     const viewportRef = React.useRef<HTMLDivElement | null>(null);
+    const hideTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const [canScroll, setCanScroll] = React.useState(false);
     const [thumbHeight, setThumbHeight] = React.useState(MIN_THUMB_HEIGHT);
     const [thumbTop, setThumbTop] = React.useState(0);
+    const [showIndicator, setShowIndicator] = React.useState(false);
 
     const setRefs = React.useCallback(
       (node: HTMLDivElement | null) => {
@@ -60,6 +62,17 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
       setThumbTop(Math.round(progress * maxOffset));
     }, []);
 
+    const revealIndicator = React.useCallback(() => {
+      if (!canScroll) return;
+      setShowIndicator(true);
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+      hideTimeoutRef.current = setTimeout(() => {
+        setShowIndicator(false);
+      }, 1400);
+    }, [canScroll]);
+
     React.useEffect(() => {
       const viewport = viewportRef.current;
       if (!viewport) return;
@@ -81,11 +94,28 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
       };
     }, [updateIndicator]);
 
+    React.useEffect(() => {
+      if (!canScroll) {
+        setShowIndicator(false);
+      }
+    }, [canScroll]);
+
+    React.useEffect(() => {
+      return () => {
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+        }
+      };
+    }, []);
+
     return (
       <div className={cn("relative min-h-0", className)}>
         <div
           ref={setRefs}
-          onScroll={updateIndicator}
+          onScroll={() => {
+            updateIndicator();
+            revealIndicator();
+          }}
           className={cn(
             "no-native-scrollbar h-full overflow-y-auto overscroll-y-contain",
             viewportClassName,
@@ -95,7 +125,12 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
         </div>
 
         {canScroll && (
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-1.5">
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-y-0 right-0 w-1.5 transition-opacity duration-300",
+              showIndicator ? "opacity-100" : "opacity-0",
+            )}
+          >
             <div
               className="absolute right-[2px] w-[3px] rounded-full bg-sky-400/30"
               style={{

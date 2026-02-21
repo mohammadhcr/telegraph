@@ -35,6 +35,14 @@ export type MessageRow = {
 };
 
 const fallbackUsername = (userId: string) => `user_${userId.slice(-8)}`;
+const ONLINE_TTL_MS = 90_000;
+
+export const isUserOnlineNow = (user: Pick<UserRow, "is_online" | "last_seen">) => {
+  if (!user.is_online || !user.last_seen) return false;
+  const lastSeen = new Date(user.last_seen).getTime();
+  if (Number.isNaN(lastSeen)) return false;
+  return Date.now() - lastSeen <= ONLINE_TTL_MS;
+};
 
 export const syncUserFromClerk = async (clerkUser: ClerkLikeUser) => {
   const email =
@@ -108,12 +116,18 @@ export const getContacts = async (currentUserId: string) => {
   const { data, error } = await supabaseServer
     .from("users")
     .select("*")
-    .neq("id", currentUserId)
-    .order("is_online", { ascending: false })
-    .order("last_seen", { ascending: false, nullsFirst: false });
+    .neq("id", currentUserId);
 
   if (error) throw error;
-  return (data ?? []) as UserRow[];
+  return ((data ?? []) as UserRow[]).sort((a, b) => {
+    const aOnline = isUserOnlineNow(a);
+    const bOnline = isUserOnlineNow(b);
+    if (aOnline !== bOnline) return aOnline ? -1 : 1;
+
+    const aLastSeen = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+    const bLastSeen = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+    return bLastSeen - aLastSeen;
+  });
 };
 
 export const findChatBetweenUsers = async (currentUserId: string, otherUserId: string) => {

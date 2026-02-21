@@ -14,6 +14,7 @@ type ChatViewItem = {
   username: string;
   avatar: string | null;
   lastMessage: string;
+  updatedAt: string;
   updatedAtLabel: string;
   unreadCount: number;
 };
@@ -29,12 +30,18 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
   const [isPending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
+    const sortedChats = [...chats].sort((a, b) => {
+      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return chats;
-    return chats.filter(
+    if (!normalized) return sortedChats;
+    return sortedChats.filter(
       (chat) =>
         chat.username.toLowerCase().includes(normalized) ||
-        chat.lastMessage.toLowerCase().includes(normalized)
+        chat.lastMessage.toLowerCase().includes(normalized),
     );
   }, [chats, query]);
 
@@ -58,28 +65,45 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
         </CardHeader>
       </Card>
 
-      <ScrollArea className="mt-3 min-h-0 flex-1" viewportClassName="space-y-3 pb-3 pr-2 md:pr-3">
+      <ScrollArea
+        className="mt-3 min-h-0 flex-1"
+        viewportClassName="pb-3 pr-2 md:pr-3"
+      >
         {filtered.length ? (
-          filtered.map((chat) => {
-            const busy = (isPending && pendingId === chat.userId) || pendingId === chat.userId;
-            return (
-              <button
-                key={chat.chatId}
-                type="button"
-                className="block w-full text-left"
-                disabled={busy}
-                onClick={() => openChat(chat.userId)}
-              >
-                <Card className="transition-colors hover:bg-accent/40">
-                  <CardContent className="flex items-center justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-3">
+          <Card className="gap-0 overflow-hidden py-0">
+            {filtered.map((chat, index) => {
+              const busy =
+                (isPending && pendingId === chat.userId) ||
+                pendingId === chat.userId;
+              const isFirst = index === 0;
+              const isLast = index === filtered.length - 1;
+
+              return (
+                <button
+                  key={chat.chatId}
+                  type="button"
+                  className={`block w-full border-b border-white/10 text-left transition-colors hover:bg-accent/40 ${
+                    isFirst ? "rounded-t-2xl" : ""
+                  } ${isLast ? "rounded-b-2xl border-b-0" : ""}`}
+                  disabled={busy}
+                  onClick={() => openChat(chat.userId)}
+                >
+                  <CardContent className="flex items-center justify-between gap-4 px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-4">
                       <Avatar className="size-12">
-                        <AvatarImage src={chat.avatar ?? undefined} alt={chat.username} />
-                        <AvatarFallback>{chat.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarImage
+                          src={chat.avatar ?? undefined}
+                          alt={chat.username}
+                        />
+                        <AvatarFallback>
+                          {chat.username.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 space-y-1">
                         <p className="truncate font-medium">{chat.username}</p>
-                        <p className="truncate text-xs text-muted-foreground">{chat.lastMessage}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {chat.lastMessage}
+                        </p>
                       </div>
                     </div>
 
@@ -87,7 +111,9 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
                       {busy ? (
                         <Loader2 className="size-4 animate-spin text-muted-foreground" />
                       ) : (
-                        <p className="text-xs text-muted-foreground">{chat.updatedAtLabel}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {chat.updatedAtLabel}
+                        </p>
                       )}
                       {chat.unreadCount > 0 && (
                         <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-2 text-xs font-medium">
@@ -96,14 +122,16 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
                       )}
                     </div>
                   </CardContent>
-                </Card>
-              </button>
-            );
-          })
+                </button>
+              );
+            })}
+          </Card>
         ) : (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              {query ? "No results found." : "No chats yet. Start by opening a contact."}
+              {query
+                ? "No results found."
+                : "No chats yet. Start by opening a contact."}
             </CardContent>
           </Card>
         )}

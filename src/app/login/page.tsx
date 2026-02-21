@@ -73,7 +73,7 @@ const Login = () => {
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_github",
-        redirectUrl: "",
+        redirectUrl: "/sso-callback",
         redirectUrlComplete: `/chats`,
       });
     } catch (error: any) {
@@ -94,7 +94,7 @@ const Login = () => {
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "",
+        redirectUrl: "/sso-callback",
         redirectUrlComplete: `/chats`,
       });
     } catch (error: any) {

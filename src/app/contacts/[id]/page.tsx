@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLastSeen } from "@/lib/date";
-import { getUserById, syncUserFromClerk } from "@/lib/db";
+import { getUserById, isUserOnlineNow, syncUserFromClerk } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Telegraph | Contact Profile",
@@ -55,7 +55,7 @@ const ContactProfilePage = async ({ params }: ContactProfilePageProps) => {
               <div className="space-y-1">
                 <CardTitle className="text-2xl">{contact.username}</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  {contact.is_online
+                  {isUserOnlineNow(contact)
                     ? "Online"
                     : formatLastSeen(contact.last_seen)}
                 </p>

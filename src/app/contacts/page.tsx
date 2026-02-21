@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { ContactsList } from "@/components/contacts-list";
 import { formatLastSeen } from "@/lib/date";
-import { getContacts, syncUserFromClerk } from "@/lib/db";
+import { getContacts, isUserOnlineNow, syncUserFromClerk } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Telegraph | Contacts",
@@ -27,7 +27,7 @@ const ContactsPage = async () => {
     username: contact.username,
     email: contact.email,
     avatar: contact.avatar,
-    statusLabel: contact.is_online ? "Online" : formatLastSeen(contact.last_seen),
+    statusLabel: isUserOnlineNow(contact) ? "Online" : formatLastSeen(contact.last_seen),
   }));
 
   return (

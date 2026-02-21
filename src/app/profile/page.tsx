@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { currentUser } from "@clerk/nextjs/server";
 import { formatLastSeen } from "@/lib/date";
-import { syncUserFromClerk } from "@/lib/db";
+import { isUserOnlineNow, syncUserFromClerk } from "@/lib/db";
 
 const Profile = async () => {
   const user = await currentUser();
@@ -34,7 +34,7 @@ const Profile = async () => {
               <div className="space-y-1">
                 <CardTitle className="text-2xl">{username}</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  {syncedUser.is_online
+                  {isUserOnlineNow(syncedUser)
                     ? "Online"
                     : formatLastSeen(syncedUser.last_seen)}
                 </p>

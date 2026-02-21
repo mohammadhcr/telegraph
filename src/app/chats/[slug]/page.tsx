@@ -11,6 +11,7 @@ import {
   findChatBetweenUsers,
   getMessagesByChatId,
   getUserById,
+  isUserOnlineNow,
   markChatMessagesAsSeen,
   syncUserFromClerk,
 } from "@/lib/db";
@@ -74,7 +75,7 @@ const ChatBySlugPage = async ({ params }: ChatPageProps) => {
                 <div className="min-w-0">
                   {contact.username}
                   <p className="text-xs text-muted-foreground">
-                    {contact.is_online
+                    {isUserOnlineNow(contact)
                       ? "Online"
                       : formatLastSeen(contact.last_seen)}
                   </p>

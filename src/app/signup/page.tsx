@@ -109,7 +109,7 @@ const Signup = () => {
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_github",
-        redirectUrl: "",
+        redirectUrl: "/sso-callback",
         redirectUrlComplete: `/chats`,
       });
 
@@ -132,7 +132,7 @@ const Signup = () => {
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "",
+        redirectUrl: "/sso-callback",
         redirectUrlComplete: `/chats`,
       });
 

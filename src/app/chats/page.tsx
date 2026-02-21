@@ -28,6 +28,7 @@ const ChatsPage = async () => {
     username: chat.otherUser.username,
     avatar: chat.otherUser.avatar,
     lastMessage: chat.lastMessage,
+    updatedAt: chat.updatedAt,
     updatedAtLabel: formatChatUpdatedAt(chat.updatedAt),
     unreadCount: chat.unreadCount,
   }));
