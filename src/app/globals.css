@@ -134,6 +134,15 @@
       linear-gradient(180deg, rgb(12 15 24) 0%, rgb(15 19 31) 100%);
     font-family: var(--font-inter), var(--font-vazir), sans-serif;
   }
+
+  @media (max-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled),
   a {

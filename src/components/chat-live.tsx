@@ -42,7 +42,9 @@ export const ChatLive = ({
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const composerHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const composerHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [chatId, setChatId] = useState<string | null>(initialChatId);
   const [messages, setMessages] = useState<MessageItem[]>(initialMessages);
   const [message, setMessage] = useState("");
@@ -102,7 +104,9 @@ export const ChatLive = ({
         (payload) => {
           const next = payload.new as MessageItem;
           setMessages((prev) =>
-            prev.map((item) => (item.id === next.id ? { ...item, ...next } : item)),
+            prev.map((item) =>
+              item.id === next.id ? { ...item, ...next } : item,
+            ),
           );
         },
       )
@@ -144,7 +148,8 @@ export const ChatLive = ({
     textarea.style.height = "auto";
     const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${nextHeight}px`;
-    textarea.style.overflowY = textarea.scrollHeight > nextHeight + 1 ? "auto" : "hidden";
+    textarea.style.overflowY =
+      textarea.scrollHeight > nextHeight + 1 ? "auto" : "hidden";
   };
 
   const updateComposerIndicator = () => {
@@ -169,7 +174,9 @@ export const ChatLive = ({
     );
     const maxOffset = Math.max(0, railHeight - nextThumbHeight);
     const progress =
-      scrollHeight === clientHeight ? 0 : scrollTop / (scrollHeight - clientHeight);
+      scrollHeight === clientHeight
+        ? 0
+        : scrollTop / (scrollHeight - clientHeight);
 
     setComposerThumbHeight(nextThumbHeight);
     setComposerThumbTop(Math.round(progress * maxOffset));
@@ -250,7 +257,9 @@ export const ChatLive = ({
     await submitMessage();
   };
 
-  const handleMessageKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleMessageKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (!sending && message.trim()) {
@@ -265,7 +274,7 @@ export const ChatLive = ({
         <ScrollArea
           ref={scrollRef}
           className="min-h-0 flex-1"
-          viewportClassName="pb-36 pr-5 md:pb-20 md:pr-6"
+          viewportClassName="pb-36 pr-3 md:pb-20 md:pr-6"
         >
           <div className="flex min-h-full flex-col justify-end gap-3 pt-2 md:pt-3">
             {sortedMessages.length ? (
@@ -282,11 +291,15 @@ export const ChatLive = ({
                           : "rounded-bl-md bg-zinc-800 text-zinc-100"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words">{item.content}</p>
+                      <p className="whitespace-pre-wrap break-words">
+                        {item.content}
+                      </p>
                     </div>
                     <p
                       className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground ${
-                        item.sender_id === currentUserId ? "justify-end" : "justify-start"
+                        item.sender_id === currentUserId
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
                     >
                       <span>{formatLocalTime(item.created_at)}</span>
