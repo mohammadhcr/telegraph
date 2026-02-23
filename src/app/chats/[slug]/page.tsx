@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Avatar,
+  AvatarBadge,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatLive } from "@/components/chat-live";
 import { BackLinkButton } from "@/components/back-link-button";
@@ -46,6 +51,7 @@ const ChatBySlugPage = async ({ params }: ChatPageProps) => {
 
   const chat = await findChatBetweenUsers(userId, slug);
   const messages = chat ? await getMessagesByChatId(chat.id) : [];
+  const isOnline = isUserOnlineNow(contact);
 
   if (chat) {
     await markChatMessagesAsSeen(chat.id, userId);
@@ -59,9 +65,9 @@ const ChatBySlugPage = async ({ params }: ChatPageProps) => {
             <BackLinkButton href="/chats" />
             <Link
               href={`/contacts/${contact.id}`}
-              className="flex items-center gap-3 truncate text-base font-semibold hover:underline"
+              className="flex items-center gap-3 truncate text-base font-semibold"
             >
-              <Avatar className="size-10">
+              <Avatar className="size-10 ring-1 ring-white/15">
                 <AvatarImage
                   src={contact.avatar ?? undefined}
                   alt={contact.username}
@@ -69,13 +75,14 @@ const ChatBySlugPage = async ({ params }: ChatPageProps) => {
                 <AvatarFallback>
                   {contact.username.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
+                {isOnline ? (
+                  <AvatarBadge className="bg-emerald-500" />
+                ) : null}
               </Avatar>
               <div className="min-w-0">
                 {contact.username}
                 <p className="text-xs text-muted-foreground">
-                  {isUserOnlineNow(contact)
-                    ? "Online"
-                    : formatLastSeen(contact.last_seen)}
+                  {isOnline ? "Online" : formatLastSeen(contact.last_seen)}
                 </p>
               </div>
             </Link>
@@ -94,3 +101,4 @@ const ChatBySlugPage = async ({ params }: ChatPageProps) => {
 };
 
 export default ChatBySlugPage;
+

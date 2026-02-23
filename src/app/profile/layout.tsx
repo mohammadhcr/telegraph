@@ -9,3 +9,4 @@ const ProfileLayout = ({ children }: ProfileLayoutProps) => {
 };
 
 export default ProfileLayout;
+

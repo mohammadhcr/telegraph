@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { ChatsList } from "@/components/chats-list";
-import { getChatList, syncUserFromClerk } from "@/lib/db";
+import { getChatList, isUserOnlineNow, syncUserFromClerk } from "@/lib/db";
 import { formatChatUpdatedAt } from "@/lib/date";
 
 export const metadata: Metadata = {
@@ -26,6 +26,7 @@ const ChatsPage = async () => {
     userId: chat.otherUser.id,
     username: chat.otherUser.username,
     avatar: chat.otherUser.avatar,
+    isOnline: isUserOnlineNow(chat.otherUser),
     lastMessage: chat.lastMessage,
     updatedAt: chat.updatedAt,
     updatedAtLabel: formatChatUpdatedAt(chat.updatedAt),
@@ -33,10 +34,11 @@ const ChatsPage = async () => {
   }));
 
   return (
-    <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-3 md:h-[100dvh]">
-      <ChatsList chats={chatsView} />
+    <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-4 md:h-[100dvh] md:px-5">
+      <ChatsList chats={chatsView} currentUserId={userId} />
     </main>
   );
 };
 
 export default ChatsPage;
+

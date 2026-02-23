@@ -21,3 +21,4 @@ export const POST = async () => {
     return NextResponse.json({ error: "Sync failed" }, { status: 500 });
   }
 };
+

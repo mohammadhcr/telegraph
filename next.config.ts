@@ -1,11 +1,4 @@
 import type { NextConfig } from "next";
-import nextPWA from "next-pwa";
-
-const withPWA = nextPWA({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-});
 
 const nextConfig: NextConfig = {
   sassOptions: {
@@ -23,7 +16,4 @@ const nextConfig: NextConfig = {
   // Keep Turbopack active in development.
   turbopack: {},
 };
-
-const isProduction = process.env.NODE_ENV === "production";
-
-export default isProduction ? withPWA(nextConfig as any) : nextConfig;
+export default nextConfig;

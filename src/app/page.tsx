@@ -13,18 +13,21 @@ const Home = async () => {
   }
 
   return (
-    <main className="apple-page flex items-center justify-center px-4 py-8">
-      <section className="w-full max-w-2xl">
-        <div className="text-center flex flex-col items-center justify-center gap-5">
+    <main className="apple-page flex items-center justify-center px-4 py-10">
+      <section className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-slate-950/35 p-6 text-center backdrop-blur-2xl md:p-10">
+        <div className="flex flex-col items-center justify-center gap-5">
+          <span className="rounded-full border border-primary/35 bg-primary/10 px-3 py-1 text-xs text-primary">
+            Telegram-inspired interface
+          </span>
           <h1 className="text-5xl md:text-6xl font-semibold tracking-tight">
             Telegraph
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
+          <p className="max-w-2xl text-lg text-muted-foreground md:text-xl">
             A simple messenger experience for direct conversations and fast
             communication.
           </p>
         </div>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
           <Button asChild className="w-full p-6 text-lg font-normal">
             <Link href="/login">Login</Link>
           </Button>
@@ -42,3 +45,4 @@ const Home = async () => {
 };
 
 export default Home;
+

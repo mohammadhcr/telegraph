@@ -9,3 +9,4 @@ const ContactsLayout = ({ children }: ContactsLayoutProps) => {
 };
 
 export default ContactsLayout;
+

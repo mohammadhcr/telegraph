@@ -9,3 +9,4 @@ const ChatsLayout = ({ children }: ChatsLayoutProps) => {
 };
 
 export default ChatsLayout;
+

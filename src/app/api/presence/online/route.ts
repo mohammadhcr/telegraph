@@ -16,3 +16,4 @@ export const POST = async () => {
     return NextResponse.json({ error: "Presence update failed" }, { status: 500 });
   }
 };
+

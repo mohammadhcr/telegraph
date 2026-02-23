@@ -4,11 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MessageSquare, UsersRound } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -23,6 +22,7 @@ export const AppShell = ({ children }: AppShellProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
+  const lastRefreshAtRef = useRef(0);
   const userName = user?.username || "Profile";
   const profileActive = pathname === "/profile";
   const isChatRoomPage = pathname.startsWith("/chats/");
@@ -43,7 +43,11 @@ export const AppShell = ({ children }: AppShellProps) => {
       );
 
     sendOnline();
-    const interval = setInterval(sendOnline, 45_000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        sendOnline();
+      }
+    }, 60_000);
 
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
@@ -53,33 +57,6 @@ export const AppShell = ({ children }: AppShellProps) => {
       }
     };
 
-    const refreshDebounced = (() => {
-      let timeout: ReturnType<typeof setTimeout> | null = null;
-      return () => {
-        if (timeout) clearTimeout(timeout);
-        timeout = setTimeout(() => router.refresh(), 250);
-      };
-    })();
-
-    const channel = supabaseBrowser
-      .channel(`app-realtime:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        refreshDebounced,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "chats" },
-        refreshDebounced,
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "users" },
-        refreshDebounced,
-      )
-      .subscribe();
-
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("beforeunload", sendOffline);
 
@@ -87,9 +64,39 @@ export const AppShell = ({ children }: AppShellProps) => {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("beforeunload", sendOffline);
-      supabaseBrowser.removeChannel(channel);
     };
-  }, [router, user]);
+  }, [user]);
+
+  useEffect(() => {
+    if (isChatRoomPage) return;
+
+    const refreshIfNeeded = () => {
+      const now = Date.now();
+      if (now - lastRefreshAtRef.current < 15_000) return;
+      lastRefreshAtRef.current = now;
+      router.refresh();
+    };
+
+    const onFocus = () => {
+      if (document.visibilityState === "visible") {
+        refreshIfNeeded();
+      }
+    };
+
+    const poll = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refreshIfNeeded();
+      }
+    }, 90_000);
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      clearInterval(poll);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [isChatRoomPage, router]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -140,21 +147,26 @@ export const AppShell = ({ children }: AppShellProps) => {
 
   return (
     <div
-      className="apple-page"
+      className="apple-page relative"
       style={
         isChatRoomPage
           ? {
-              ["--chat-composer-bottom" as string]: "max(0.35rem, env(safe-area-inset-bottom))",
+              ["--chat-composer-bottom" as string]:
+                "max(0.35rem, env(safe-area-inset-bottom))",
             }
           : undefined
       }
     >
-      <aside className="apple-surface fixed inset-y-2 left-2 hidden w-64 rounded-3xl md:flex md:flex-col">
-        <div className="border-b border-white/10 p-4">
-          <p className="text-lg font-semibold">Telegraph</p>
-          <p className="text-xs text-muted-foreground">Messenger</p>
+      <aside className="bg-white/2 border border-white/8 fixed inset-y-3 left-3 hidden w-72 rounded-[1.5rem] md:flex md:flex-col">
+        <div className="tg-divider p-5">
+          <p className="text-[1.1rem] font-semibold tracking-tight">
+            Telegraph
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Fast, Secure & Free Messenger
+          </p>
         </div>
-        <nav className="space-y-2 p-3">
+        <nav className="space-y-2 p-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -165,7 +177,12 @@ export const AppShell = ({ children }: AppShellProps) => {
                 key={item.href}
                 asChild
                 variant={isActive ? "secondary" : "ghost"}
-                className="w-full justify-start"
+                className={cn(
+                  "h-11 w-full justify-start rounded-md text-[0.95rem]",
+                  isActive
+                    ? "bg-primary/25 text-primary"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
               >
                 <Link href={item.href}>
                   <Icon className="size-4" />
@@ -175,11 +192,16 @@ export const AppShell = ({ children }: AppShellProps) => {
             );
           })}
         </nav>
-        <div className="mt-auto border-t border-white/10 p-3">
+        <div className="tg-divider mt-auto p-4">
           <Button
             asChild
             variant={profileActive ? "secondary" : "ghost"}
-            className="h-12 w-full justify-start"
+            className={cn(
+              "h-12 w-full justify-start rounded-lg",
+              profileActive
+                ? "bg-primary/18 text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
           >
             <Link href="/profile">
               <Avatar className="size-8">
@@ -194,10 +216,10 @@ export const AppShell = ({ children }: AppShellProps) => {
         </div>
       </aside>
 
-      <main className={cn("md:pl-[17.5rem]")}>{children}</main>
+      <main className={cn("md:pl-[19.5rem]")}>{children}</main>
 
       {!isChatRoomPage ? (
-        <nav className="mobile-tabbar apple-surface fixed inset-x-2 bottom-2 z-40 grid h-16 grid-cols-3 rounded-3xl px-2 md:hidden">
+        <nav className="mobile-tabbar tg-surface fixed inset-x-3 bottom-3 z-40 grid h-[4.2rem] grid-cols-3 rounded-xl px-2 md:hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -208,11 +230,11 @@ export const AppShell = ({ children }: AppShellProps) => {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
+                  "flex flex-col items-center justify-center gap-1 rounded-lg text-[11px] transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon className="size-5" />
+                <Icon className="size-[1.15rem]" />
                 <span>{item.label}</span>
               </Link>
             );
@@ -220,7 +242,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           <Link
             href="/profile"
             className={cn(
-              "flex flex-col items-center justify-center gap-1 rounded-md text-xs",
+              "flex flex-col items-center justify-center gap-1 rounded-lg text-[11px] transition-colors",
               profileActive ? "text-primary" : "text-muted-foreground",
             )}
           >

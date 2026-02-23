@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Avatar,
+  AvatarBadge,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLastSeen } from "@/lib/date";
@@ -31,6 +36,7 @@ const ContactProfilePage = async ({ params }: ContactProfilePageProps) => {
 
   const { id } = await params;
   const contact = await getUserById(id);
+  const isOnline = contact ? isUserOnlineNow(contact) : false;
 
   if (!contact || contact.id === userId) {
     redirect("/contacts");
@@ -49,18 +55,19 @@ const ContactProfilePage = async ({ params }: ContactProfilePageProps) => {
               <AvatarFallback>
                 {contact.username.slice(0, 2).toUpperCase()}
               </AvatarFallback>
+              {isOnline ? (
+                <AvatarBadge className="bg-emerald-500" />
+              ) : null}
             </Avatar>
             <div className="space-y-1">
               <CardTitle className="text-2xl">{contact.username}</CardTitle>
               <p className="text-xs text-muted-foreground">
-                {isUserOnlineNow(contact)
-                  ? "Online"
-                  : formatLastSeen(contact.last_seen)}
+                {isOnline ? "Online" : formatLastSeen(contact.last_seen)}
               </p>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="rounded-lg border border-white/10 bg-black/20 p-4">
               <p className="mb-2 text-xs text-muted-foreground">Email</p>
               <span className="rounded-full border px-3 py-1 text-sm">
                 {contact.email}
@@ -80,3 +87,4 @@ const ContactProfilePage = async ({ params }: ContactProfilePageProps) => {
 };
 
 export default ContactProfilePage;
+

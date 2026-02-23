@@ -132,7 +132,7 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
             )}
           >
             <div
-              className="absolute right-[2px] w-[3px] rounded-full bg-sky-400/30"
+              className="absolute right-[2px] w-[3px] rounded-full bg-primary/35"
               style={{
                 top: thumbTop + RAIL_PADDING,
                 height: thumbHeight,
@@ -146,3 +146,4 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
 );
 
 ScrollArea.displayName = "ScrollArea";
+

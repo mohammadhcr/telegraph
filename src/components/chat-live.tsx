@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Check, CheckCheck, Loader2, SendHorizontal } from "lucide-react";
+import { Loader2, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/scroll-area";
 import {
@@ -22,6 +21,12 @@ type MessageItem = {
   is_seen: boolean | null;
 };
 
+type ChatRow = {
+  id: string;
+  user1_id: string;
+  user2_id: string;
+};
+
 type ChatLiveProps = {
   initialChatId: string | null;
   initialMessages: MessageItem[];
@@ -38,9 +43,10 @@ export const ChatLive = ({
   currentUserId,
   recipientId,
 }: ChatLiveProps) => {
-  const router = useRouter();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const markSeenCooldownRef = useRef(0);
+  const cacheKeyRef = useRef("");
   const composerHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -53,14 +59,63 @@ export const ChatLive = ({
   const [composerThumbHeight, setComposerThumbHeight] = useState(0);
   const [showComposerIndicator, setShowComposerIndicator] = useState(false);
 
+  const isNearBottom = () => {
+    const viewport = scrollRef.current;
+    if (!viewport) return true;
+    const remaining =
+      viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    return remaining <= 72;
+  };
+
+  const canMarkSeenNow = () =>
+    document.visibilityState === "visible" &&
+    document.hasFocus() &&
+    isNearBottom();
+
   useEffect(() => {
     setMessages(initialMessages);
   }, [initialMessages]);
 
   useEffect(() => {
+    const currentCacheKey =
+      chatId ??
+      [currentUserId, recipientId].sort((a, b) => a.localeCompare(b)).join(":");
+    cacheKeyRef.current = `telegraph:cache:messages:${currentCacheKey}`;
+
+    if (initialMessages.length) return;
+
+    try {
+      const raw = window.localStorage.getItem(cacheKeyRef.current);
+      if (!raw) return;
+      const cached = JSON.parse(raw) as MessageItem[];
+      if (Array.isArray(cached) && cached.length) {
+        setMessages(cached);
+      }
+    } catch {
+      // Ignore malformed cache data.
+    }
+  }, [chatId, currentUserId, initialMessages.length, recipientId]);
+
+  useEffect(() => {
+    if (!cacheKeyRef.current || !messages.length) return;
+    try {
+      window.localStorage.setItem(
+        cacheKeyRef.current,
+        JSON.stringify(messages.slice(-200)),
+      );
+    } catch {
+      // Ignore storage quota errors.
+    }
+  }, [messages]);
+
+  useEffect(() => {
     if (!chatId) return;
 
     const markSeen = () => {
+      if (!canMarkSeenNow()) return;
+      const now = Date.now();
+      if (now - markSeenCooldownRef.current < 1500) return;
+      markSeenCooldownRef.current = now;
       fetch("/api/chats/seen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,6 +124,13 @@ export const ChatLive = ({
     };
 
     markSeen();
+
+    const onFocus = () => markSeen();
+    const onVisibility = () => markSeen();
+    const onScroll = () => markSeen();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    scrollRef.current?.addEventListener("scroll", onScroll);
 
     const channel = supabaseBrowser
       .channel(`messages:${chatId}`)
@@ -112,9 +174,58 @@ export const ChatLive = ({
       .subscribe();
 
     return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      scrollRef.current?.removeEventListener("scroll", onScroll);
       supabaseBrowser.removeChannel(channel);
     };
   }, [chatId, currentUserId]);
+
+  useEffect(() => {
+    if (chatId) return;
+
+    const channel = supabaseBrowser
+      .channel(`chat-bind:${currentUserId}:${recipientId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chats" },
+        async (payload) => {
+          const next = payload.new as ChatRow;
+          const isTargetChat =
+            (next.user1_id === currentUserId &&
+              next.user2_id === recipientId) ||
+            (next.user1_id === recipientId && next.user2_id === currentUserId);
+
+          if (!isTargetChat) return;
+
+          setChatId(next.id);
+
+          const { data } = await supabaseBrowser
+            .from("messages")
+            .select("*")
+            .eq("chat_id", next.id)
+            .order("created_at", { ascending: true });
+
+          const incoming = (data ?? []) as MessageItem[];
+          if (!incoming.length) return;
+
+          setMessages((prev) => {
+            const seen = new Set(prev.map((item) => item.id));
+            const merged = [...prev];
+            for (const item of incoming) {
+              if (seen.has(item.id)) continue;
+              merged.push(item);
+            }
+            return merged;
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabaseBrowser.removeChannel(channel);
+    };
+  }, [chatId, currentUserId, recipientId]);
 
   const sortedMessages = useMemo(
     () =>
@@ -243,7 +354,6 @@ export const ChatLive = ({
       if (textarea) {
         textarea.scrollTop = 0;
       }
-      router.refresh();
     } catch (error) {
       console.error(error);
     } finally {
@@ -288,7 +398,7 @@ export const ChatLive = ({
                   <div key={item.id}>
                     {showDaySeparator ? (
                       <div className="my-4 flex items-center justify-center">
-                        <span className="rounded-full bg-white/10 px-4 py-1 text-xs text-muted-foreground">
+                        <span className="rounded-full border border-white/12 bg-white/4 px-4 py-1 text-xs text-muted-foreground backdrop-blur-sm">
                           {formatSmartDayLabel(item.created_at)}
                         </span>
                       </div>
@@ -299,10 +409,10 @@ export const ChatLive = ({
                     >
                       <div className="max-w-[82%]">
                         <div
-                          className={`rounded-[22px] px-4 py-2 text-[14px] md:text-[16px] shadow-sm ${
+                          className={`rounded-[22px] px-4 py-2 text-[14px] md:text-[15px] ${
                             item.sender_id === currentUserId
-                              ? "rounded-br-md bg-sky-500 text-white"
-                              : "rounded-bl-md bg-zinc-800 text-zinc-100"
+                              ? "rounded-br-md bg-primary text-primary-foreground"
+                              : "rounded-bl-md bg-white/8 text-primary-foreground backdrop-blur-sm"
                           }`}
                         >
                           <p className="whitespace-pre-wrap break-words">
@@ -310,12 +420,16 @@ export const ChatLive = ({
                           </p>
                         </div>
                         <p
-                          className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground justify-end`}
+                          className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground ${
+                            item.sender_id === currentUserId
+                              ? "justify-end"
+                              : "justify-start"
+                          }`}
                         >
                           <span>{formatMessageTime(item.created_at)}</span>
                           {item.sender_id === currentUserId ? (
                             item.is_seen ? (
-                              <FaCheck className="size-3 text-sky-400" />
+                              <FaCheck className="size-3 text-primary" />
                             ) : (
                               <FaCheck className="size-3" />
                             )
@@ -335,9 +449,9 @@ export const ChatLive = ({
         </ScrollArea>
       </div>
 
-      <div className="chat-composer fixed inset-x-0 z-40 md:bottom-3 md:left-[17.5rem]">
-        <div className="mx-auto w-full max-w-4xl px-3 md:px-4 mb-2">
-          <div className="apple-surface flex items-end gap-3 rounded-3xl px-3 py-2">
+      <div className="chat-composer fixed inset-x-0 z-40 md:bottom-3 md:left-[19rem]">
+        <div className="mx-auto w-full max-w-4xl px-3 md:px-8 mb-2">
+          <div className="tg-surface flex items-end gap-4 border-none rounded-lg px-3 py-3">
             <div className="relative min-w-0 flex-1">
               <textarea
                 ref={textareaRef}
@@ -358,7 +472,7 @@ export const ChatLive = ({
                 inputMode="text"
                 aria-autocomplete="none"
                 autoComplete="off"
-                className="flex items-center justify-center no-native-scrollbar min-h-10 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-[16px] leading-5 outline-none placeholder:text-muted-foreground"
+                className="no-native-scrollbar min-h-10 w-full resize-none rounded-xl border border-white/12 bg-white/4 px-4 py-2 text-[16px] leading-5 outline-none placeholder:text-muted-foreground backdrop-blur-sm"
                 disabled={sending}
               />
               {composerCanScroll && (
@@ -368,7 +482,7 @@ export const ChatLive = ({
                   }`}
                 >
                   <div
-                    className="absolute right-0 w-1 rounded-full bg-sky-400/40"
+                    className="absolute right-0 w-1 rounded-full bg-primary/40"
                     style={{
                       top: composerThumbTop,
                       height: composerThumbHeight,

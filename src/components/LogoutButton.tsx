@@ -23,9 +23,10 @@ export const LogoutButton = () => {
   };
 
   return (
-    <Button onClick={Logout} disabled={loading} variant="outline">
+    <Button onClick={Logout} disabled={loading} variant="destructive">
       {loading ? <Spinner className="size-4" /> : <LogOut className="size-4" />}
       Sign out
     </Button>
   );
 };
+

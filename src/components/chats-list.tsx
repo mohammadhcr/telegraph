@@ -1,18 +1,25 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Avatar,
+  AvatarBadge,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/scroll-area";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type ChatViewItem = {
   chatId: string;
   userId: string;
   username: string;
   avatar: string | null;
+  isOnline: boolean;
   lastMessage: string;
   updatedAt: string;
   updatedAtLabel: string;
@@ -21,16 +28,74 @@ type ChatViewItem = {
 
 type ChatsListProps = {
   chats: ChatViewItem[];
+  currentUserId: string;
 };
 
-export const ChatsList = ({ chats }: ChatsListProps) => {
+export const ChatsList = ({ chats, currentUserId }: ChatsListProps) => {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [localChats, setLocalChats] = useState<ChatViewItem[]>(chats);
+  const storageKey = `telegraph:cache:chats:${currentUserId}`;
+
+  useEffect(() => {
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+    let lastRefreshAt = 0;
+    const refreshList = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastRefreshAt < 2500) return;
+      lastRefreshAt = now;
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => router.refresh(), 200);
+    };
+
+    const channel = supabaseBrowser
+      .channel(`chats-list:${currentUserId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chats" },
+        refreshList,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        refreshList,
+      )
+      .subscribe();
+
+    return () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      supabaseBrowser.removeChannel(channel);
+    };
+  }, [currentUserId, router]);
+
+  useEffect(() => {
+    setLocalChats(chats);
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(chats));
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [chats, storageKey]);
+
+  useEffect(() => {
+    try {
+      if (navigator.onLine) return;
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return;
+      const cached = JSON.parse(raw) as ChatViewItem[];
+      if (Array.isArray(cached) && cached.length) {
+        setLocalChats(cached);
+      }
+    } catch {
+      // Ignore malformed cache.
+    }
+  }, [storageKey]);
 
   const filtered = useMemo(() => {
-    const sortedChats = [...chats].sort((a, b) => {
+    const sortedChats = [...localChats].sort((a, b) => {
       const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
       return bTime - aTime;
@@ -43,7 +108,7 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
         chat.username.toLowerCase().includes(normalized) ||
         chat.lastMessage.toLowerCase().includes(normalized),
     );
-  }, [chats, query]);
+  }, [localChats, query]);
 
   const openChat = (userId: string) => {
     setPendingId(userId);
@@ -56,11 +121,14 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
     <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
       <Card className="shrink-0 py-3">
         <CardHeader className="gap-3 px-4 py-3">
-          <CardTitle className="text-center text-xl">Chats</CardTitle>
+          <CardTitle className="text-center text-[1.25rem] tracking-tight">
+            Chats
+          </CardTitle>
           <Input
             placeholder="Search chats..."
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            className="h-11"
           />
         </CardHeader>
       </Card>
@@ -82,15 +150,18 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
                 <button
                   key={chat.chatId}
                   type="button"
-                  className={`block w-full border-b border-white/10 text-left transition-colors hover:bg-accent/40 ${
-                    isFirst ? "rounded-t-2xl" : ""
-                  } ${isLast ? "rounded-b-2xl border-b-0" : ""}`}
+                  className={`block w-full border-b border-white/10 text-left transition-colors bg-white/4 hover:bg-white/8 ${
+                    isFirst ? "rounded-t-xl" : ""
+                  } ${isLast ? "rounded-b-xl border-b-0" : ""}`}
                   disabled={busy}
                   onClick={() => openChat(chat.userId)}
                 >
                   <CardContent className="flex items-center justify-between gap-4 px-5 py-4">
                     <div className="flex min-w-0 items-center gap-4">
-                      <Avatar className="size-12">
+                      <Avatar className="size-12 ring-1 ring-white/20">
+                        {chat.isOnline ? (
+                          <AvatarBadge className="bg-emerald-500" />
+                        ) : null}
                         <AvatarImage
                           src={chat.avatar ?? undefined}
                           alt={chat.username}
@@ -100,8 +171,10 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 space-y-1">
-                        <p className="truncate font-medium">{chat.username}</p>
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-[15px] font-medium">
+                          {chat.username}
+                        </p>
+                        <p className="truncate text-[12px] text-muted-foreground">
                           {chat.lastMessage}
                         </p>
                       </div>
@@ -116,7 +189,7 @@ export const ChatsList = ({ chats }: ChatsListProps) => {
                         </p>
                       )}
                       {chat.unreadCount > 0 && (
-                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-2 text-xs font-medium">
+                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-medium text-primary-foreground">
                           {chat.unreadCount}
                         </span>
                       )}

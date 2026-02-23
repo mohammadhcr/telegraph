@@ -1,6 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
-import { markChatMessagesAsSeen } from "@/lib/db";
+import {
+  getChatListTag,
+  getChatMessagesTag,
+  markChatMessagesAsSeen,
+} from "@/lib/db";
 
 export const POST = async (req: Request) => {
   const { userId } = await auth();
@@ -17,9 +22,12 @@ export const POST = async (req: Request) => {
 
   try {
     await markChatMessagesAsSeen(chatId, userId);
+    revalidateTag(getChatListTag(userId), "max");
+    revalidateTag(getChatMessagesTag(chatId), "max");
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
     console.error("Mark seen failed:", error);
     return NextResponse.json({ error: "Mark seen failed" }, { status: 500 });
   }
 };
+

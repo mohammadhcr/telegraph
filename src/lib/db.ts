@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { supabaseServer } from "@/lib/supabase-server";
 
 type ClerkLikeUser = {
@@ -58,10 +59,18 @@ export const syncUserFromClerk = async (clerkUser: ClerkLikeUser) => {
   const username = clerkUser.username ?? fallbackUsername(clerkUser.id);
   const now = new Date().toISOString();
 
-  const { data, error } = await supabaseServer
+  const { data: existing, error: existingError } = await supabaseServer
     .from("users")
-    .upsert(
-      {
+    .select("*")
+    .eq("id", clerkUser.id)
+    .maybeSingle<UserRow>();
+
+  if (existingError) throw existingError;
+
+  if (!existing) {
+    const { data, error } = await supabaseServer
+      .from("users")
+      .insert({
         id: clerkUser.id,
         username,
         email,
@@ -69,9 +78,31 @@ export const syncUserFromClerk = async (clerkUser: ClerkLikeUser) => {
         is_online: true,
         last_seen: now,
         created_at: now,
-      },
-      { onConflict: "id" }
-    )
+      })
+      .select("*")
+      .single<UserRow>();
+
+    if (error) throw error;
+    return data;
+  }
+
+  const profileChanged =
+    existing.username !== username ||
+    existing.email !== email ||
+    (existing.avatar ?? "") !== (clerkUser.imageUrl ?? "");
+
+  if (!profileChanged) {
+    return existing;
+  }
+
+  const { data, error } = await supabaseServer
+    .from("users")
+    .update({
+      username,
+      email,
+      avatar: clerkUser.imageUrl,
+    })
+    .eq("id", clerkUser.id)
     .select("*")
     .single<UserRow>();
 
@@ -162,17 +193,6 @@ export const ensureChatBetweenUsers = async (currentUserId: string, otherUserId:
   return data;
 };
 
-export const getMessagesByChatId = async (chatId: string) => {
-  const { data, error } = await supabaseServer
-    .from("messages")
-    .select("*")
-    .eq("chat_id", chatId)
-    .order("created_at", { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []) as MessageRow[];
-};
-
 export const markChatMessagesAsSeen = async (chatId: string, viewerId: string) => {
   const { error } = await supabaseServer
     .from("messages")
@@ -212,7 +232,10 @@ export type ChatListItem = {
   unreadCount: number;
 };
 
-export const getChatList = async (currentUserId: string): Promise<ChatListItem[]> => {
+export const getChatListTag = (userId: string) => `chat-list:${userId}`;
+export const getChatMessagesTag = (chatId: string) => `chat-messages:${chatId}`;
+
+const getChatListRaw = async (currentUserId: string): Promise<ChatListItem[]> => {
   const { data: chatsData, error: chatsError } = await supabaseServer
     .from("chats")
     .select("*")
@@ -285,3 +308,35 @@ export const getChatList = async (currentUserId: string): Promise<ChatListItem[]
     })
     .filter((item): item is ChatListItem => item !== null);
 };
+
+export const getChatList = async (currentUserId: string): Promise<ChatListItem[]> =>
+  unstable_cache(
+    () => getChatListRaw(currentUserId),
+    [getChatListTag(currentUserId)],
+    {
+      revalidate: 30,
+      tags: [getChatListTag(currentUserId)],
+    },
+  )();
+
+const getMessagesByChatIdRaw = async (chatId: string) => {
+  const { data, error } = await supabaseServer
+    .from("messages")
+    .select("*")
+    .eq("chat_id", chatId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as MessageRow[];
+};
+
+export const getMessagesByChatId = async (chatId: string) =>
+  unstable_cache(
+    () => getMessagesByChatIdRaw(chatId),
+    [getChatMessagesTag(chatId)],
+    {
+      revalidate: 15,
+      tags: [getChatMessagesTag(chatId)],
+    },
+  )();
+

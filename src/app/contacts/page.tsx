@@ -21,19 +21,24 @@ const ContactsPage = async () => {
   }
 
   const contacts = await getContacts(userId);
-  const contactsView = contacts.map((contact) => ({
+  const contactsView = contacts.map((contact) => {
+    const isOnline = isUserOnlineNow(contact);
+    return {
     id: contact.id,
     username: contact.username,
     email: contact.email,
     avatar: contact.avatar,
-    statusLabel: isUserOnlineNow(contact) ? "Online" : formatLastSeen(contact.last_seen),
-  }));
+    isOnline,
+    statusLabel: isOnline ? "Online" : formatLastSeen(contact.last_seen),
+  };
+  });
 
   return (
-    <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-3 md:h-[100dvh]">
-      <ContactsList contacts={contactsView} />
+    <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-4 md:h-[100dvh] md:px-5">
+      <ContactsList contacts={contactsView} currentUserId={userId} />
     </main>
   );
 };
 
 export default ContactsPage;
+

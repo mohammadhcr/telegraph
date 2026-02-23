@@ -75,3 +75,4 @@ export const formatLastSeen = (iso?: string | null) => {
   if (!date) return "Offline";
   return `Last seen ${formatChatUpdatedAt(iso)}`;
 };
+
