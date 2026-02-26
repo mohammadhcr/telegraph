@@ -7,6 +7,7 @@ import { formatLastSeen } from "@/lib/date";
 import { isUserOnlineNow, syncUserFromClerk } from "@/lib/db";
 import { AppPreferences } from "@/components/app-preferences";
 import { ProfileEditor } from "@/components/profile-editor";
+import { ScrollArea } from "@/components/scroll-area";
 
 const Profile = async () => {
   const user = await currentUser();
@@ -19,7 +20,10 @@ const Profile = async () => {
 
   return (
     <main className="apple-page h-[calc(100dvh-5.5rem)] min-h-0 overflow-hidden px-4 py-3 md:h-[100dvh] md:px-5">
-      <div className=" no-native-scrollbar mx-auto h-full w-full max-w-2xl overflow-y-auto overscroll-y-contain pb-24 pt-2 md:pb-6 md:pt-4">
+      <ScrollArea
+        className="mx-auto h-full w-full max-w-2xl"
+        viewportClassName="pb-24 pt-2 md:pb-6 md:pt-4"
+      >
         <Card className="w-full border-none">
           <CardHeader className="items-center gap-3 px-6 py-4 text-center">
             <Avatar className="mx-auto size-32">
@@ -33,7 +37,7 @@ const Profile = async () => {
             </Avatar>
             <div className="space-y-1">
               <CardTitle className="text-2xl">{username}</CardTitle>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {isUserOnlineNow(syncedUser)
                   ? "Online"
                   : formatLastSeen(syncedUser.last_seen)}
@@ -52,15 +56,12 @@ const Profile = async () => {
                 {syncedUser.email}
               </span>
             </div>
-
-            <AppPreferences />
-
             <div className="flex items-center justify-center pt-1">
               <LogoutButton />
             </div>
           </CardContent>
         </Card>
-      </div>
+      </ScrollArea>
     </main>
   );
 };

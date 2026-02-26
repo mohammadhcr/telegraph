@@ -23,25 +23,40 @@ type MessageItem = {
 
 type ChatRow = {
   id: string;
-  user1_id: string;
-  user2_id: string;
+  user1_id: string | null;
+  user2_id: string | null;
 };
 
 type ChatLiveProps = {
+  chatType: "direct" | "group";
   initialChatId: string | null;
   initialMessages: MessageItem[];
   currentUserId: string;
-  recipientId: string;
+  recipientId: string | null;
+  participants: Array<{
+    id: string;
+    username: string;
+    avatar: string | null;
+    isOnline: boolean;
+  }>;
+};
+
+type DayMessageGroup = {
+  dayKey: string;
+  dayLabel: string;
+  items: MessageItem[];
 };
 
 const normalizeOutgoingMessage = (value: string) =>
   value.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n");
 
 export const ChatLive = ({
+  chatType,
   initialChatId,
   initialMessages,
   currentUserId,
   recipientId,
+  participants,
 }: ChatLiveProps) => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -58,6 +73,24 @@ export const ChatLive = ({
   const [composerThumbTop, setComposerThumbTop] = useState(0);
   const [composerThumbHeight, setComposerThumbHeight] = useState(0);
   const [showComposerIndicator, setShowComposerIndicator] = useState(false);
+
+  useEffect(() => {
+    setChatId(initialChatId);
+  }, [initialChatId]);
+
+  const participantsById = useMemo(
+    () =>
+      new Map(
+        participants.map((participant) => [
+          participant.id,
+          {
+            username: participant.username,
+            avatar: participant.avatar,
+          },
+        ]),
+      ),
+    [participants],
+  );
 
   const isNearBottom = () => {
     const viewport = scrollRef.current;
@@ -79,7 +112,10 @@ export const ChatLive = ({
   useEffect(() => {
     const currentCacheKey =
       chatId ??
-      [currentUserId, recipientId].sort((a, b) => a.localeCompare(b)).join(":");
+      [currentUserId, recipientId]
+        .filter((item): item is string => Boolean(item))
+        .sort((a, b) => a.localeCompare(b))
+        .join(":");
     cacheKeyRef.current = `telegraph:cache:messages:${currentCacheKey}`;
 
     if (initialMessages.length) return;
@@ -182,7 +218,7 @@ export const ChatLive = ({
   }, [chatId, currentUserId]);
 
   useEffect(() => {
-    if (chatId) return;
+    if (chatId || chatType !== "direct" || !recipientId) return;
 
     const channel = supabaseBrowser
       .channel(`chat-bind:${currentUserId}:${recipientId}`)
@@ -225,7 +261,7 @@ export const ChatLive = ({
     return () => {
       supabaseBrowser.removeChannel(channel);
     };
-  }, [chatId, currentUserId, recipientId]);
+  }, [chatId, chatType, currentUserId, recipientId]);
 
   const sortedMessages = useMemo(
     () =>
@@ -236,6 +272,29 @@ export const ChatLive = ({
       }),
     [messages],
   );
+
+  const dayGroups = useMemo(() => {
+    const groups: DayMessageGroup[] = [];
+
+    for (const item of sortedMessages) {
+      const dayKey = getLocalDayKey(item.created_at) || "__unknown_day__";
+      const dayLabel = formatSmartDayLabel(item.created_at);
+      const lastGroup = groups[groups.length - 1];
+
+      if (!lastGroup || lastGroup.dayKey !== dayKey) {
+        groups.push({
+          dayKey,
+          dayLabel,
+          items: [item],
+        });
+        continue;
+      }
+
+      lastGroup.items.push(item);
+    }
+
+    return groups;
+  }, [sortedMessages]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -325,7 +384,9 @@ export const ChatLive = ({
       const response = await fetch("/api/chats/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipientId, content }),
+        body: JSON.stringify(
+          chatType === "group" ? { chatId, content } : { recipientId, content },
+        ),
       });
 
       if (!response.ok) {
@@ -385,61 +446,78 @@ export const ChatLive = ({
           viewportClassName="pb-20 pt-20 pr-2 md:pr-3"
         >
           <div className="flex min-h-full flex-col justify-end gap-3 pt-2 md:pt-3">
-            {sortedMessages.length ? (
-              sortedMessages.map((item, index) => {
-                const dayKey = getLocalDayKey(item.created_at);
-                const prevDayKey =
-                  index > 0
-                    ? getLocalDayKey(sortedMessages[index - 1]?.created_at)
-                    : "";
-                const showDaySeparator = dayKey && dayKey !== prevDayKey;
-
-                return (
-                  <div key={item.id}>
-                    {showDaySeparator ? (
-                      <div className="my-4 flex items-center justify-center">
-                        <span className="rounded-full border border-white/12 bg-white/4 px-4 py-1 text-xs text-muted-foreground backdrop-blur-sm">
-                          {formatSmartDayLabel(item.created_at)}
-                        </span>
-                      </div>
-                    ) : null}
-
-                    <div
-                      className={`flex ${item.sender_id === currentUserId ? "justify-end" : "justify-start"}`}
-                    >
-                      <div className="max-w-[82%]">
-                        <div
-                          className={`rounded-[22px] px-4 py-2 text-[14px] md:text-[15px] ${
-                            item.sender_id === currentUserId
-                              ? "rounded-br-md bg-primary text-primary-foreground"
-                              : "rounded-bl-md bg-white/8 text-primary-foreground backdrop-blur-sm"
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap break-words">
-                            {item.content}
-                          </p>
-                        </div>
-                        <p
-                          className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground ${
-                            item.sender_id === currentUserId
-                              ? "justify-end"
-                              : "justify-start"
-                          }`}
-                        >
-                          <span>{formatMessageTime(item.created_at)}</span>
-                          {item.sender_id === currentUserId ? (
-                            item.is_seen ? (
-                              <FaCheck className="size-3 text-primary" />
-                            ) : (
-                              <FaCheck className="size-3" />
-                            )
-                          ) : null}
-                        </p>
-                      </div>
-                    </div>
+            {dayGroups.length ? (
+              dayGroups.map((group) => (
+                <div key={group.dayKey} className="relative">
+                  <div className="sticky top-0 z-10 flex justify-center py-1.5">
+                    <span className="rounded-full border border-white/12 bg-white/4 px-4 py-1 text-xs text-muted-foreground backdrop-blur-sm">
+                      {group.dayLabel}
+                    </span>
                   </div>
-                );
-              })
+                  <div className="space-y-3">
+                    {group.items.map((item) => {
+                      const participant = participantsById.get(item.sender_id);
+                      const isMine = item.sender_id === currentUserId;
+
+                      return (
+                        <div key={item.id}>
+                          <div
+                            className={`flex ${isMine ? "justify-end" : "justify-start"} items-end`}
+                          >
+                            {!isMine ? (
+                              <div className="mr-2 mb-5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-white/20">
+                                {participant?.avatar ? (
+                                  <img
+                                    src={participant.avatar}
+                                    alt={participant.username}
+                                    className="size-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                                    {(participant?.username ?? "U").slice(0, 1)}
+                                  </span>
+                                )}
+                              </div>
+                            ) : null}
+                            <div className="max-w-[82%]">
+                              <div
+                                className={`rounded-[22px] px-4 py-2 text-[14px] md:text-[15px] ${
+                                  isMine
+                                    ? "rounded-br-md bg-primary text-primary-foreground"
+                                    : "rounded-bl-md bg-white/8 text-primary-foreground backdrop-blur-sm"
+                                }`}
+                              >
+                                {!isMine ? (
+                                  <p className="mb-1 text-[11px] font-semibold text-primary/90">
+                                    {participant?.username ?? "Unknown"}
+                                  </p>
+                                ) : null}
+                                <p className="whitespace-pre-wrap break-words">
+                                  {item.content}
+                                </p>
+                              </div>
+                              <p
+                                className={`mt-1 flex items-center gap-1 px-1 text-[11px] text-muted-foreground justify-end`}
+                              >
+                                <span>
+                                  {formatMessageTime(item.created_at)}
+                                </span>
+                                {isMine ? (
+                                  item.is_seen ? (
+                                    <FaCheck className="size-3 text-primary" />
+                                  ) : (
+                                    <FaCheck className="size-3" />
+                                  )
+                                ) : null}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
             ) : (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 No messages yet. Start the conversation.
@@ -450,7 +528,7 @@ export const ChatLive = ({
       </div>
 
       <div className="chat-composer fixed inset-x-0 z-40 md:bottom-3 md:left-[19rem]">
-        <div className="mx-auto w-full max-w-4xl px-3 md:px-8 mb-2">
+        <div className="mx-auto mb-2 w-full max-w-4xl px-3 md:px-8">
           <div className="tg-surface flex items-end gap-4 border-none rounded-lg px-3 py-3">
             <div className="relative min-w-0 flex-1">
               <textarea

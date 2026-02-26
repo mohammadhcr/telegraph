@@ -8,6 +8,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLastSeen } from "@/lib/date";
@@ -44,7 +45,10 @@ const ContactProfilePage = async ({ params }: ContactProfilePageProps) => {
 
   return (
     <main className="apple-page h-[calc(100dvh-5.5rem)] overflow-hidden px-4 py-3 md:h-[100dvh]">
-      <div className="no-native-scrollbar mx-auto flex h-full w-full max-w-2xl items-start justify-center overflow-y-auto overscroll-y-contain py-3 md:items-center">
+      <ScrollArea
+        className="mx-auto h-full w-full max-w-2xl"
+        viewportClassName="flex items-start justify-center py-3 md:items-center"
+      >
         <Card className="w-full">
           <CardHeader className="items-center gap-3 px-6 py-4 text-center">
             <Avatar className="mx-auto size-32">
@@ -81,7 +85,7 @@ const ContactProfilePage = async ({ params }: ContactProfilePageProps) => {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </ScrollArea>
     </main>
   );
 };

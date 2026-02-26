@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import {
+  getChatParticipantIds,
   getChatListTag,
   getChatMessagesTag,
   markChatMessagesAsSeen,
@@ -21,8 +22,11 @@ export const POST = async (req: Request) => {
   }
 
   try {
+    const participants = await getChatParticipantIds(chatId);
     await markChatMessagesAsSeen(chatId, userId);
-    revalidateTag(getChatListTag(userId), "max");
+    for (const participantId of participants) {
+      revalidateTag(getChatListTag(participantId), "max");
+    }
     revalidateTag(getChatMessagesTag(chatId), "max");
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {

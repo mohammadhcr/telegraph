@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import Logo from "../../public/icon180x180.png";
 import { usePathname, useRouter } from "next/navigation";
 import { MessageSquare, UsersRound } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -159,12 +161,24 @@ export const AppShell = ({ children }: AppShellProps) => {
     >
       <aside className="bg-white/2 border border-white/8 fixed inset-y-3 left-3 hidden w-72 rounded-[1.5rem] md:flex md:flex-col">
         <div className="tg-divider p-5">
-          <p className="text-[1.1rem] font-semibold tracking-tight">
-            Telegraph
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Fast, Secure & Free Messenger
-          </p>
+          <div className="flex items-center gap-3">
+            <Image
+              src={Logo}
+              alt="Telegraph logo"
+              width={40}
+              height={40}
+              className="size-10 rounded-md"
+              priority
+            />
+            <div className="min-w-0">
+              <p className="text-[1.1rem] font-semibold leading-tight tracking-tight">
+                Telegraph
+              </p>
+              <p className="mt-1 text-xs leading-tight text-muted-foreground">
+                Fast, Secure & Free
+              </p>
+            </div>
+          </div>
         </div>
         <nav className="space-y-2 p-4">
           {navItems.map((item) => {
@@ -180,7 +194,7 @@ export const AppShell = ({ children }: AppShellProps) => {
                 className={cn(
                   "h-11 w-full justify-start rounded-md text-[0.95rem]",
                   isActive
-                    ? "bg-primary/25 text-primary"
+                    ? "bg-primary/25 text-primary hover:bg-primary/25"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -199,7 +213,7 @@ export const AppShell = ({ children }: AppShellProps) => {
             className={cn(
               "h-12 w-full justify-start rounded-lg",
               profileActive
-                ? "bg-primary/18 text-primary"
+                ? "bg-primary/18 text-primary hover:bg-primary/18"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

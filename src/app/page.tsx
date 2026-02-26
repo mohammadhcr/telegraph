@@ -17,7 +17,7 @@ const Home = async () => {
       <section className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-slate-950/35 p-6 text-center backdrop-blur-2xl md:p-10">
         <div className="flex flex-col items-center justify-center gap-5">
           <span className="rounded-full border border-primary/35 bg-primary/10 px-3 py-1 text-xs text-primary">
-            Telegram-inspired interface
+            Fast, Secure & Free Messenger
           </span>
           <h1 className="text-5xl md:text-6xl font-semibold tracking-tight">
             Telegraph
@@ -45,4 +45,3 @@ const Home = async () => {
 };
 
 export default Home;
-

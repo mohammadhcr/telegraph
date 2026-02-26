@@ -51,6 +51,16 @@ export const ContactsList = ({ contacts, currentUserId }: ContactsListProps) => 
       .channel(`contacts-list:${currentUserId}`)
       .on(
         "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "contacts",
+          filter: `owner_id=eq.${currentUserId}`,
+        },
+        refreshList,
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "users" },
         refreshList,
       )
