@@ -19,6 +19,7 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
     const hideTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
+    const [hasFinePointer, setHasFinePointer] = React.useState(false);
     const [canScroll, setCanScroll] = React.useState(false);
     const [thumbHeight, setThumbHeight] = React.useState(MIN_THUMB_HEIGHT);
     const [thumbTop, setThumbTop] = React.useState(0);
@@ -178,6 +179,23 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
     }, [updateIndicator]);
 
     React.useEffect(() => {
+      const media = window.matchMedia("(hover: hover) and (pointer: fine)");
+      const updatePointerMode = () => setHasFinePointer(media.matches);
+      updatePointerMode();
+
+      const addListener = media.addEventListener?.bind(media);
+      const removeListener = media.removeEventListener?.bind(media);
+
+      if (addListener && removeListener) {
+        addListener("change", updatePointerMode);
+        return () => removeListener("change", updatePointerMode);
+      }
+
+      media.addListener(updatePointerMode);
+      return () => media.removeListener(updatePointerMode);
+    }, []);
+
+    React.useEffect(() => {
       if (!canScroll) {
         setShowIndicator(false);
       }
@@ -199,6 +217,10 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
             updateIndicator();
             revealIndicator();
           }}
+          onMouseMove={() => {
+            if (!hasFinePointer) return;
+            revealIndicator();
+          }}
           className={cn(
             "no-native-scrollbar h-full overflow-y-auto overscroll-y-contain",
             viewportClassName,
@@ -209,16 +231,30 @@ export const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
 
         {canScroll && (
           <div
+            onMouseEnter={() => {
+              if (!hasFinePointer) return;
+              setShowIndicator(true);
+            }}
+            onMouseMove={() => {
+              if (!hasFinePointer) return;
+              setShowIndicator(true);
+            }}
+            onMouseLeave={() => {
+              if (!hasFinePointer) return;
+              revealIndicator();
+            }}
             onMouseDown={handleTrackMouseDown}
             className={cn(
-              "absolute inset-y-0 right-0 w-1.5 cursor-default transition-opacity duration-300",
+              "absolute inset-y-0 right-0 w-3 cursor-default transition-opacity duration-300",
               showIndicator ? "opacity-100" : "opacity-0",
             )}
+            style={{ cursor: "default" }}
           >
             <div
               onMouseDown={handleThumbMouseDown}
-              className="absolute right-[2px] w-[3px] cursor-grab rounded-full bg-primary/35 active:cursor-grabbing"
+              className="absolute right-[1px] w-[5px] cursor-default rounded-full bg-primary/35"
               style={{
+                cursor: "default",
                 top: thumbTop + RAIL_PADDING,
                 height: thumbHeight,
               }}

@@ -159,7 +159,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           : undefined
       }
     >
-      <aside className="bg-white/2 border border-white/8 fixed inset-y-3 left-3 hidden w-72 rounded-[1.5rem] md:flex md:flex-col">
+      <aside className="bg-white/2 border border-white/10 fixed inset-y-3 left-3 hidden w-72 rounded-[1.5rem] md:flex md:flex-col">
         <div className="tg-divider p-5">
           <div className="flex items-center gap-3">
             <Image
@@ -206,7 +206,7 @@ export const AppShell = ({ children }: AppShellProps) => {
             );
           })}
         </nav>
-        <div className="tg-divider mt-auto p-4">
+        <div className="mt-auto border-t border-white/10 p-4">
           <Button
             asChild
             variant={profileActive ? "secondary" : "ghost"}

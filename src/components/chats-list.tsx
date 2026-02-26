@@ -278,7 +278,7 @@ export const ChatsList = ({
                 >
                   <CardContent className="flex items-center justify-between gap-4 px-5 py-4">
                     <div className="flex min-w-0 items-center gap-4">
-                      <Avatar className="size-12 ring-1 ring-white/20">
+                      <Avatar className="size-12 ring-white/20">
                         {chat.isOnline ? (
                           <AvatarBadge className="bg-emerald-500" />
                         ) : null}
@@ -294,11 +294,6 @@ export const ChatsList = ({
                         <p className="truncate text-[15px] font-medium">
                           {chat.title}
                         </p>
-                        {chat.isOnline ? (
-                          <p className="truncate text-[11px] text-muted-foreground">
-                            Online
-                          </p>
-                        ) : null}
                         <p className="truncate text-[12px] text-muted-foreground">
                           {chat.lastMessage}
                         </p>

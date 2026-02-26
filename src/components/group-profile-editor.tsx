@@ -122,7 +122,9 @@ export const GroupProfileEditor = ({
                   Cancel
                 </Button>
                 <Button type="submit" className="min-w-28" disabled={isPending}>
-                  {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : null}
                   Save changes
                 </Button>
               </div>
@@ -133,4 +135,3 @@ export const GroupProfileEditor = ({
     </>
   );
 };
-

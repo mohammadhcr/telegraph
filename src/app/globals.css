@@ -176,6 +176,13 @@
     width: 0 !important;
     height: 0 !important;
     display: none;
+    cursor: default !important;
+  }
+
+  .no-native-scrollbar::-webkit-scrollbar-track,
+  .no-native-scrollbar::-webkit-scrollbar-thumb,
+  .no-native-scrollbar::-webkit-scrollbar-corner {
+    cursor: default !important;
   }
 
   @media (max-width: 767px) {

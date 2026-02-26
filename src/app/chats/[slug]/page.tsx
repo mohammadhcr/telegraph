@@ -90,8 +90,11 @@ const ChatBySlugPage = async ({ params }: ChatPageProps) => {
                 href={`/groups/${group.id}`}
                 className="flex items-center gap-3 truncate text-base font-semibold"
               >
-                <Avatar className="size-10 ring-1 ring-white/15">
-                  <AvatarImage src={group.avatar ?? undefined} alt={groupTitle} />
+                <Avatar className="size-10 ring-white/15">
+                  <AvatarImage
+                    src={group.avatar ?? undefined}
+                    alt={groupTitle}
+                  />
                   <AvatarFallback>
                     {groupTitle.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
